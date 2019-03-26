@@ -1,0 +1,26 @@
+// Import Vuetify styling
+@require '~vuetify/src/stylus/app.styl'
+
+.max-height
+  max-height: calc(100vh - 48px)
+
+.fixed-header th {
+    background-color: #fff; //just for LIGHT THEME, change it to #474747 for DARK
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.fixed-header tr.datatable__progress th {
+    top: 56px;
+}
+
+.fixed-header .v-table__overflow {
+    overflow-y: auto;
+    height: 100%;
+}
+.scroll-x
+  overflow-x auto
+
+.select
+  cursor pointer
