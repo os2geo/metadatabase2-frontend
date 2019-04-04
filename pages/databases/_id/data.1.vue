@@ -1,17 +1,16 @@
 <template>
   <v-content>
-    <v-container pt-0 :pa-0="$breakpoint.is('xsOnly')" fill-height max-height fluid>
+    <v-container pt-0 :pa-0="$breakpoint.is('xsOnly')" fill-height max-height>
       <v-layout column>
         <div>
           <v-layout row>
             <v-flex>
               <v-toolbar flat color="transparent">
                 <v-text-field
-                  v-model="search"
+                  v-model="search "
                   :placeholder="$t('search')"
                   prepend-icon="search"
                   clearable
-                  @input="updateQuery()"
                 />
                 <v-spacer />
                 <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
@@ -45,27 +44,6 @@
                     </v-icon>
                   </v-btn>
                   <span>{{ $t('Delete') }}</span>
-                </v-tooltip>
-                <v-tooltip bottom>
-                  <v-menu slot="activator" lazy max-height="50vh" :close-on-content-click="false">
-                    <v-btn slot="activator" icon>
-                      <v-icon color="primary">
-                        settings
-                      </v-icon>
-                    </v-btn>
-                    <v-list dense>
-                      <template v-for="(header, index) in headers">
-                        <v-list-tile :key="`Header-${index}`">
-                          <v-list-tile-action>
-                            <v-checkbox v-model="header.visible" />
-                          </v-list-tile-action>
-                          <v-list-tile-title>{{ header.text }}</v-list-tile-title>
-                        </v-list-tile>
-                        <v-divider v-if="index < headers.length" :key="`Divider-${index}`" />
-                      </template>
-                    </v-list>
-                  </v-menu>
-                  <span>{{ $t('ShowColumns') }}</span>
                 </v-tooltip>
                 <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
                   <v-btn slot="activator" icon @click="dialogHelp=true">
@@ -144,55 +122,17 @@
         >
           <v-data-table
             v-model="selected"
-            :headers="visibleHeaders"
+            :search="search"
+            :headers="headers"
             :items="data"
-            :total-items="pagination.total"
-            :custom-sort="sort"
+            select-all
             hide-actions
           >
-            <template slot="headers" slot-scope="props">
-              <tr>
-                <th>
-                  <v-checkbox
-                    hide-details
-                    :input-value="checkboxClearValue"
-                    :indeterminate="!disableClear"
-                    :disabled="disableClear"
-                    @click.stop="clear()"
-                  />
-                  {{ selectionSet.length }}
-                </th>
-                <template v-for="(item, index) in props.headers">
-                  <th :key="index">
-                    <v-layout>
-                      <table-header
-                        :value="item"
-                        :sorting="sorting"
-                        :disable-filter="disableFilter"
-                        @update:sortBy="sorting.name=$event"
-                        @update:descending="sorting.descending=$event"
-                        @update:filter="item.filter=$event"
-                        @update:query="updateQuery()"
-                      />
-                      <v-spacer />
-                      <v-icon color="grey lighten-2 select" @click.stop="item.width=item.width===0?200:0">
-                        {{ item.width===0 ? 'chevron_left' : 'chevron_right' }}
-                      </v-icon>
-                      <!--
-                      <v-icon color="grey lighten-2" style="cursor: col-resize;" @mousedown="mousedown(item, $event)">
-                        chevron_right
-                      </v-icon>
-                      -->
-                    </v-layout>
-                  </th>
-                </template>
-              </tr>
-            </template>
             <template slot="items" slot-scope="props">
               <td>
                 <v-checkbox v-model="props.selected" hide-details />
               </td>
-              <td v-for="(item, index) in visibleHeaders" :key="index" class="text-xs-left select text-truncate overflow-hidden" :style="item.width>0 && `max-width:${item.width}px;min-width:${item.width}px`" @click.stop="select(props.item)">
+              <td v-for="(item, index) in headers" :key="index" class="text-xs-left select" @click.stop="select(props.item)">
                 {{ props.item[item.value] }}
               </td>
             </template>
@@ -274,6 +214,13 @@
           >
             {{ $t('Import') }}
           </v-btn>
+          <v-btn
+            dark
+            color="primary"
+            @click="removeExcel()"
+          >
+            {{ $t('Remove') }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -282,19 +229,14 @@
 
 <script>
 import XLSX from 'xlsx'
-import client from '~/plugins/feathers-client'
+import service from '~/plugins/feathers-service.js'
 import dialogRemove from '~/components/dialog-remove.vue'
-import tableHeader from '~/components/table-header.vue'
-const serviceData = client.service('data')
+import { mapGetters } from 'vuex'
 export default {
-  components: { dialogRemove, tableHeader },
+  components: { dialogRemove },
 
   data() {
     return {
-      selectionSet: {},
-      sorting: { name: null, descending: false },
-      checkboxClearValue: false,
-      loading: false,
       requiredRules: [v => !!v || this.$t('Required')],
       name: null,
       selected: [],
@@ -302,80 +244,87 @@ export default {
       dialogRemove: false,
       dialogCreate: false,
       valid: null,
+      search: null,
       sheets: [],
       sheet: null,
-      filename: null,
-      search: null,
-      query: {}
+      filename: null
     }
   },
+
   computed: {
-    disableClear() {
-      return Object.keys(this.selectionSet).length === 0
+    /*
+    headers() {
+      console.log('headers')
+      return [
+        { text: 'id', align: 'left', sortable: true, value: 'id' }
+      ]
+
+      const keys = { }
+      this.data.forEach((item) => {
+        Object.keys(item.doc).forEach((key) => {
+          if (!keys.hasOwnProperty(item)) {
+            keys[key] = { text: key, align: 'left', sortable: true, value: key }
+          }
+        })
+      })
+      return Object.keys(keys).map((key) => {
+        return keys[key]
+      })
     },
-    disableFilter() {
-      return false // this.search !== null
-    },
-    visibleHeaders() {
-      return this.headers.filter((header) => {
-        if (header.visible) return header
+    */
+    ...mapGetters('data', ['list']),
+    data() {
+      return this.list.filter((item) => {
+        console.log('data', item.id)
+        return item.databaseId === this.$route.params.id
+      }).map((item) => {
+        return { id: item.id, createdAt: item.createdAt, updatedAt: item.updatedAt, ...item.doc }
       })
     }
   },
 
   async asyncData({ store, params }) {
-    let res = await client.service('indices').get(params.id)
-    console.log(res)
-    let headers = []
-    if (res.hasOwnProperty(params.id) && res[params.id].hasOwnProperty('mappings') && res[params.id].mappings.hasOwnProperty('docs') && res[params.id].mappings.docs.hasOwnProperty('properties')) {
-      headers = Object.keys(res[params.id].mappings.docs.properties).map((key) => {
-        const header = res[params.id].mappings.docs.properties[key]
-        console.log(header)
-        return {
-          align: 'left',
-          text: key,
-          value: key,
-          visible: true,
-          type: header.type,
-          filter: null,
-          menu: false,
-          sortable: false,
-          width: 200
+    /*
+    const createHeaders = (node) => {
+      console.log(node)
+      let headers = []
+      Object.keys(node).forEach((key) => {
+        if (key === 'properties') {
+          headers = [ ...headers, ...createHeaders(node[key]) ]
+        }
+        if (key[0] !== '_' && key !== 'id' && key !== 'geometry') {
+          headers.push({ text: key, align: 'left', sortable: true, value: key })
         }
       })
+      return headers
     }
-    const service = client.service(`es/${params.id}`)
-    res = await service.find()
-    const { data, ...pagination } = res
+    */
+
+    service('databases')(store)
+    const database = await store.dispatch('databases/get', params.id)
+
+    const headers = []// createHeaders(database.schema)
+    if (database.schema.properties && database.schema.properties.properties && database.schema.properties.properties.properties) {
+      Object.keys(database.schema.properties.properties.properties).forEach((key) => {
+        headers.push({ text: key, align: 'left', sortable: true, value: key })
+      })
+    }
     return {
-      headers,
-      data,
-      pagination
+      headers
     }
   },
-  fetch({ store, params }) {
+
+  async fetch({ store, params }) {
+    service('data')(store)
+    await store.dispatch('data/find', {
+      query: {
+        databaseId: params.id
+      }
+    })
     store.commit('title', 'Data')
   },
-  mounted() {
-    const target = document.querySelector('.v-table__overflow')
-    target.addEventListener('scroll', this.onScroll, { pasive: true })
-    const updateItem = (item) => {
-      this.$set(this.index, item.id, item)
-    }
-    serviceData.on('created', (item) => {
-      console.log('created', item)
-      // updateItem(item)
-    })
-    serviceData.on('updated', item =>
-      updateItem(item)
-    )
-    serviceData.on('patched', item =>
-      updateItem(item)
-    )
-    serviceData.on('removed', (item) => {
-      console.log('removed', item)
-      this.$delete(this.index, item.id)
-    })
+  created() {
+    service('data')(this.$store)
   },
 
   methods: {
@@ -409,14 +358,34 @@ export default {
     async importExcel() {
       const json = XLSX.utils.sheet_to_json(this.$options.workbook.Sheets[this.sheet])
       const json2 = json.map((item) => {
-        if (item.hasOwnProperty('_rev')) {
-          const { _rev, ...doc } = item
-          return doc
+      /*
+        if (item.hasOwnProperty('_id') && item.hasOwnProperty('_rev')) {
+          const { _id, _rev, ...doc } = item
+          return { id: _id, doc, databaseId: this.$route.params.id }
         }
-        return item
+        if (item.hasOwnProperty('id')) {
+          const { id, ...doc } = item
+          return { id, doc, databaseId: this.$route.params.id }
+        }
+        */
+        return { doc: item, databaseId: this.$route.params.id }
       })
-      const service = client.service(`es/${this.$route.params}`)
-      await service.create(json2)
+      /*
+      await this.$store.dispatch('data/remove', [null, {
+        query: {
+          databaseId: this.$route.params.id
+        }
+      }])
+      */
+      await this.$store.dispatch('data/create', json2)
+      this.dialogImport = false
+    },
+    async removeExcel() {
+      await this.$store.dispatch('data/remove', [null, {
+        query: {
+          databaseId: this.$route.params.id
+        }
+      }])
       this.dialogImport = false
     },
     async fileselect(id) {
@@ -460,108 +429,11 @@ export default {
         this.sheets = this.$options.workbook.SheetNames
       }
       fr.readAsArrayBuffer(file[0])
-    },
-    async nextPage() {
-      try {
-        const res = await client.service(`es/${this.$route.params.id}`).find({
-          query: {
-            ...this.query,
-            ...{ $skip: this.pagination.limit + this.pagination.skip }
-          }
-        })
-        this.pagination = {
-          limit: res.limit,
-          skip: res.skip,
-          total: res.total
-        }
-        this.data = [...this.data, ...res.data]
-      } catch (error) {
-        console.log(error)
-      }
-    },
-    async onScroll(e) {
-      const offset = e.target.scrollHeight - e.target.clientHeight - e.target.scrollTop
-      if (!this.loading && this.pagination.total > this.pagination.skip + this.pagination.limit && offset < 300 && offset > 0) {
-        this.loading = true
-        await this.nextPage()
-        this.loading = false
-      }
-    },
-    async updateQuery() {
-      this.query = {}
-      if (this.search) {
-        this.query = { ...this.query,
-          ...{
-            $sqs: {
-              $query: `${this.search}*`
-            }
-          }
-        }
-      }
-      this.headers.forEach((item) => {
-        const key = item.value
-        const value = item.filter
-        if ((item.type === 'date' || item.type === 'time') && item.filter) {
-          if (item.filter.from) {
-            this.query[key] = { ...this.query[key], ...{ $gte: item.filter.from } }
-          }
-          if (item.filter.to) {
-            this.query[key] = { ...this.query[key], ...{ $lte: item.filter.to } }
-          }
-        } else if (item.type === 'number' && item.filter) {
-          this.query[key] = item.filter
-        } else if (value !== null && value !== '') {
-          this.query[key] = {
-            $wildcard: `${value}*`
-          }
-        }
-      })
-      console.log(this.query, this.sorting)
-      if (this.sorting.name) {
-        const header = this.headers.find((item) => {
-          return item.value === this.sorting.name
-        })
-        if (header) {
-          this.query.$sort = { [header.type === 'text' ? `${header.value}.keyword` : header.value]: this.sorting.descending ? -1 : 1 }
-        }
-      }
-      const service = client.service(`es/${this.$route.params.id}`)
-      const res = await service.find({
-        query: this.query
-      })
-      const { data, ...pagination } = res
-      this.data = res.data
-      this.pagination = pagination
-    },
-    sort(items, key, ascending) {
-      return items
-    },
-    clear() {
-      this.checkboxClearValue = false
-      this.selectionSet = {}
-    },
-    mousedown(item, event) {
-      const mousemove = (event) => {
-        item.width = item.width + event.movementX
-      }
-      const mouseup = () => {
-        console.log('mouseup')
-        event.target.removeEventListener('mousemove', mousemove)
-        event.target.removeEventListener('mouseup', mouseup)
-        event.target.removeEventListener('mouseleave', mouseup)
-      }
-      event.target.addEventListener('mousemove', mousemove)
-      event.target.addEventListener('mouseup', mouseup)
-      event.target.addEventListener('mouseleave', mouseup)
     }
   }
 }
 </script>
 <style scoped lang="stylus">
-.cell-width
-  max-width 200px
-  min-width 200px
-  width: 200px
 .select
   cursor pointer
 </style>

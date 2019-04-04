@@ -1,3 +1,4 @@
+import Vue from 'vue'
 import feathersClient from '~/plugins/feathers-client'
 export default function createService(namespace, options = {}) {
   const globalOptions = {
@@ -10,57 +11,33 @@ export default function createService(namespace, options = {}) {
     namespaced: true,
     state: {
       current: {},
-      index: {},
-      list: []
+      index: {}
     },
     mutations: {
       setCurrent(state, item) {
         state.current = item
       },
       addItems(state, items) {
-        let index = state.list.length
-        const newItems = []
         items.forEach((item) => {
-          if (!state.index.hasOwnProperty(item.id)) {
-            state.index[item.id] = index
-            index++
-            newItems.push(item)
-          } else {
-            const oldIndex = state.index[item.id]
-            state.list = [
-              ...state.list.slice(0, oldIndex),
-              item,
-              ...state.list.slice(oldIndex + 1)
-            ]
-          }
+          Vue.set(state.index, item.id, item)
         })
-        state.list = [...state.list, ...newItems]
       },
       clear(state) {
         state.current = {}
         state.index = {}
-        state.list = []
       },
       updateItem(state, item) {
         if (state.current && state.current.id === item.id) {
           state.current = item
         }
-        if (state.index.hasOwnProperty(item.id)) {
-          const index = state.index[item.id]
-          state.list.splice(index, 1, item)
-        } else {
-          state.index[item.id] = state.list.length
-          state.list.push(item)
-        }
+        Vue.set(state.index, item.id, item)
       },
       removeItem(state, item) {
         if (state.current && state.current.id === item.id) {
           state.current = null
         }
         if (state.index.hasOwnProperty(item.id)) {
-          const index = state.index[item.id]
-          state.list = state.list.splice(index, 1)
-          delete state.index[item.id]
+          Vue.delete(state.index, item.id)
         }
       }
     },
@@ -120,7 +97,7 @@ export default function createService(namespace, options = {}) {
         })
       },
       list: (state) => {
-        return state.list
+        return Object.keys(state.index).map(key => state.index[key])
       }
     }
   }
