@@ -29,6 +29,9 @@
         <v-list-tile :to="localePath({ name: 'organizations-id-databases', params: $route.params })" active-class="primary white--text" nuxt>
           <v-list-tile-title>{{ $t('Databases') }}</v-list-tile-title>
         </v-list-tile>
+        <v-list-tile :to="localePath({ name: 'organizations-id-forms', params: $route.params })" active-class="primary white--text" nuxt>
+          <v-list-tile-title>{{ $t('Forms') }}</v-list-tile-title>
+        </v-list-tile>
       </v-list>
     </main-drawer>
     <main-toolbar v-model="drawer" />

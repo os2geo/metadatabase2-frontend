@@ -194,7 +194,8 @@ export default {
     service('groups')(store)
     await store.dispatch('groups/find', {
       query: {
-        organizationId: params.id
+        organizationId: params.id,
+        $limit: -1
       }
     })
   },

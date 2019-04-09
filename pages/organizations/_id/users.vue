@@ -227,10 +227,15 @@ export default {
     service('roles')(store)
     await store.dispatch('users/find', {
       query: {
-        organizationId: params.id
+        organizationId: params.id,
+        $limit: -1
       }
     })
-    await store.dispatch('roles/find')
+    await store.dispatch('roles/find', {
+      query: {
+        $limit: -1
+      }
+    })
   },
   created() {
     service('users')(this.$store)

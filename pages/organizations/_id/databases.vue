@@ -194,7 +194,8 @@ export default {
     service('databases')(store)
     await store.dispatch('databases/find', {
       query: {
-        organizationId: params.id
+        organizationId: params.id,
+        $limit: -1
       }
     })
   },

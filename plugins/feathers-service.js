@@ -10,65 +10,43 @@ export default function createService(namespace, options = {}) {
     namespaced: true,
     state: {
       current: {},
-      index: {},
       list: []
     },
     mutations: {
       setCurrent(state, item) {
         state.current = item
       },
+      addItem(state, item) {
+        state.list.push(item)
+      },
       addItems(state, items) {
-        let index = state.list.length
-        const newItems = []
-        items.forEach((item) => {
-          if (!state.index.hasOwnProperty(item.id)) {
-            state.index[item.id] = index
-            index++
-            newItems.push(item)
-          } else {
-            const oldIndex = state.index[item.id]
-            state.list = [
-              ...state.list.slice(0, oldIndex),
-              item,
-              ...state.list.slice(oldIndex + 1)
-            ]
-          }
-        })
-        state.list = [...state.list, ...newItems]
+        state.list = [...state.list, ...items]
       },
       clear(state) {
-        state.current = {}
-        state.index = {}
+        // state.current = {}
         state.list = []
       },
       updateItem(state, item) {
         if (state.current && state.current.id === item.id) {
           state.current = item
         }
-        if (state.index.hasOwnProperty(item.id)) {
-          const index = state.index[item.id]
-          state.list.splice(index, 1, item)
-        } else {
-          state.index[item.id] = state.list.length
-          state.list.push(item)
+        const index = state.list.findIndex(element => element.id === item.id)
+        if (index !== -1) {
+          state.list.slice(index, 1, item)
         }
       },
-      removeItem(state, item) {
-        if (state.current && state.current.id === item.id) {
+      removeItem(state, id) {
+        if (state.current && state.current.id === id) {
           state.current = null
         }
-        if (state.index.hasOwnProperty(item.id)) {
-          const index = state.index[item.id]
-          state.list = state.list.splice(index, 1)
-          delete state.index[item.id]
-        }
+        state.list = state.list.filter(element => element.id !== id)
       }
     },
     actions: {
       async find({ state, commit }, params) {
         try {
           const res = await service.find(params)
-          commit('clear', res)
+          commit('clear')
           commit('addItems', res)
           return res
         } catch (error) {
@@ -138,7 +116,7 @@ export default function createService(namespace, options = {}) {
       if (options.enableEvents) {
         // Listen to socket events when available.
         service.on('created', (item) => {
-          store.commit(`${namespace}/updateItem`, item)
+          store.commit(`${namespace}/addItem`, item)
         })
         service.on('updated', item =>
           store.commit(`${namespace}/updateItem`, item)
@@ -147,7 +125,7 @@ export default function createService(namespace, options = {}) {
           store.commit(`${namespace}/updateItem`, item)
         )
         service.on('removed', (item) => {
-          store.commit(`${namespace}/removeItem`, item)
+          store.commit(`${namespace}/removeItem`, item.id)
         })
       }
     }

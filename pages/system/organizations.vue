@@ -190,7 +190,9 @@ export default {
   },
   async fetch({ store, params }) {
     service('organizations')(store)
-    await store.dispatch('organizations/find')
+    await store.dispatch('organizations/find', { query: {
+      $limit: -1
+    } })
     store.commit('title', 'Organizations')
   },
   created() {

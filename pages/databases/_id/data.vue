@@ -6,14 +6,18 @@
           <v-layout row>
             <v-flex>
               <v-toolbar flat color="transparent">
+                <v-chip color="primary" dark>
+                  {{ pagination.total }}
+                </v-chip>
                 <v-text-field
                   v-model="search"
-                  :placeholder="$t('search')"
+                  :placeholder="$t('Search')"
                   prepend-icon="search"
                   clearable
                   @input="updateQuery()"
                 />
                 <v-spacer />
+
                 <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
                   <v-btn slot="activator" icon @click="dialogImport=true">
                     <v-icon color="primary">
@@ -39,7 +43,7 @@
                   <span>{{ $t('Add') }}</span>
                 </v-tooltip>
                 <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
-                  <v-btn slot="activator" :disabled="selected.length===0" icon @click="dialogRemove=true">
+                  <v-btn slot="activator" :disabled="disableClear" icon @click="dialogRemove=true">
                     <v-icon color="primary">
                       delete
                     </v-icon>
@@ -109,7 +113,7 @@
                         </v-list-tile-content>
                       </v-list-tile>
                       <v-list-tile
-                        :disabled="selected.length===0"
+                        :disabled="disableClear"
                         @click="dialogRemove = true"
                       >
                         <v-list-tile-action>
@@ -143,7 +147,6 @@
           class="fixed-header white"
         >
           <v-data-table
-            v-model="selected"
             :headers="visibleHeaders"
             :items="data"
             :total-items="pagination.total"
@@ -160,20 +163,29 @@
                     :disabled="disableClear"
                     @click.stop="clear()"
                   />
-                  {{ selectionSet.length }}
                 </th>
                 <template v-for="(item, index) in props.headers">
-                  <th :key="index">
+                  <th
+                    :id="`header-${index}`"
+                    :key="index"
+                    draggable
+                    @dragover.prevent
+                    @dragenter.prevent="tableHeaderDragEnter"
+                    @dragleave.prevent="tableHeaderDragLeave"
+                    @drop.prevent="tableHeaderDrop($event, item, index)"
+                    @dragstart="tableHeaderDragStart($event, item)"
+                  >
                     <v-layout>
-                      <table-header
-                        :value="item"
-                        :sorting="sorting"
-                        :disable-filter="disableFilter"
-                        @update:sortBy="sorting.name=$event"
-                        @update:descending="sorting.descending=$event"
-                        @update:filter="item.filter=$event"
-                        @update:query="updateQuery()"
-                      />
+                      <v-layout column justify-center>
+                        <table-header
+                          :value="item"
+                          :sorting="sorting"
+                          @update:sortBy="sorting.name=$event"
+                          @update:descending="sorting.descending=$event"
+                          @update:filter="item.filter=$event"
+                          @update:query="updateQuery()"
+                        />
+                      </v-layout>
                       <v-spacer />
                       <v-icon color="grey lighten-2 select" @click.stop="item.width=item.width===0?200:0">
                         {{ item.width===0 ? 'chevron_left' : 'chevron_right' }}
@@ -190,7 +202,12 @@
             </template>
             <template slot="items" slot-scope="props">
               <td>
-                <v-checkbox v-model="props.selected" hide-details />
+                <v-checkbox
+                  :input-value="selectionSet.hasOwnProperty(props.item._id)"
+                  primary
+                  hide-details
+                  @change="select($event, props.item._id)"
+                />
               </td>
               <td v-for="(item, index) in visibleHeaders" :key="index" class="text-xs-left select text-truncate overflow-hidden" :style="item.width>0 && `max-width:${item.width}px;min-width:${item.width}px`" @click.stop="select(props.item)">
                 {{ props.item[item.value] }}
@@ -291,13 +308,12 @@ export default {
 
   data() {
     return {
-      selectionSet: {},
       sorting: { name: null, descending: false },
       checkboxClearValue: false,
       loading: false,
       requiredRules: [v => !!v || this.$t('Required')],
       name: null,
-      selected: [],
+      selectionSet: {},
       dialogImport: false,
       dialogRemove: false,
       dialogCreate: false,
@@ -306,15 +322,15 @@ export default {
       sheet: null,
       filename: null,
       search: null,
-      query: {}
+      query: {},
+      headers: [],
+      data: [],
+      pagination: {}
     }
   },
   computed: {
     disableClear() {
       return Object.keys(this.selectionSet).length === 0
-    },
-    disableFilter() {
-      return false // this.search !== null
     },
     visibleHeaders() {
       return this.headers.filter((header) => {
@@ -346,6 +362,7 @@ export default {
     }
     const service = client.service(`es/${params.id}`)
     res = await service.find()
+    console.log(res)
     const { data, ...pagination } = res
     return {
       headers,
@@ -397,14 +414,27 @@ export default {
       }
     },
     async remove() {
-      for (const item of this.selected) {
-        await this.$store.dispatch('databases/remove', item.id)
+      const service = client.service(`es/${this.$route.params.id}`)
+      for (const id of Object.keys(this.selectionSet)) {
+        await service.remove(id)
+        const index = this.data.findIndex((item) => {
+          return item._id === id
+        })
+        this.data.splice(index, 1)
+        this.pagination.total = this.pagination.total - 1
       }
-      this.selected = []
+      this.clear()
       this.dialogRemove = false
     },
-    select(item) {
+    edit(item) {
       this.$router.push(this.localePath({ name: 'organizations-id', params: { id: item.id } }))
+    },
+    select(state, id) {
+      if (state) {
+        this.$set(this.selectionSet, id, id)
+      } else {
+        this.$delete(this.selectionSet, id)
+      }
     },
     async importExcel() {
       const json = XLSX.utils.sheet_to_json(this.$options.workbook.Sheets[this.sheet])
@@ -415,7 +445,7 @@ export default {
         }
         return item
       })
-      const service = client.service(`es/${this.$route.params}`)
+      const service = client.service(`es/${this.$route.params.id}`)
       await service.create(json2)
       this.dialogImport = false
     },
@@ -540,6 +570,8 @@ export default {
       this.checkboxClearValue = false
       this.selectionSet = {}
     },
+    /*
+    resize column
     mousedown(item, event) {
       const mousemove = (event) => {
         item.width = item.width + event.movementX
@@ -553,6 +585,40 @@ export default {
       event.target.addEventListener('mousemove', mousemove)
       event.target.addEventListener('mouseup', mouseup)
       event.target.addEventListener('mouseleave', mouseup)
+    },
+    */
+    tableHeaderDragStart(e, header) {
+      e.dataTransfer.setData('header', header.value)
+      // e.dropEffect = 'move'
+    },
+    tableHeaderDragEnter(e) {
+      e.dataTransfer.dropEffect = 'move'
+      if (e.target.nodeName === 'TH') {
+        e.target.classList.add('accent')
+        e.target.classList.add('lighten-4')
+      }
+    },
+    tableHeaderDragLeave(e) {
+      e.dataTransfer.dropEffect = 'move'
+      if (e.toElement.nodeName !== 'DIV' && e.fromElement.nodeName === 'TH') {
+        e.target.classList.remove('accent')
+        e.target.classList.remove('lighten-4')
+      }
+    },
+    tableHeaderDrop(e, headerTo, index) {
+      const el = document.querySelector(`#header-${index}`)
+      el.classList.remove('accent')
+      el.classList.remove('lighten-4')
+      const headerFrom = e.dataTransfer.getData('header')
+      const indexTo = this.headers.findIndex((item) => {
+        return item.value === headerTo.value
+      })
+      const indexFrom = this.headers.findIndex((item) => {
+        return item.value === headerFrom
+      })
+      const header = this.headers[indexFrom]
+      this.headers.splice(indexFrom, 1)
+      this.headers.splice(indexTo, 0, header)
     }
   }
 }

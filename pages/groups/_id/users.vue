@@ -214,12 +214,14 @@ export default {
     service('users-groups')(store)
     await store.dispatch('users/find', {
       query: {
-        organizationId: store.state.groups.current.organizationId
+        organizationId: store.state.groups.current.organizationId,
+        $limit: -1
       }
     })
     await store.dispatch('users-groups/find', {
       query: {
-        groupId: params.id
+        groupId: params.id,
+        $limit: -1
       }
     })
     store.commit('title', 'Users-Groups')

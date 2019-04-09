@@ -92,7 +92,7 @@
             v-model="selected"
             :search="search"
             :headers="headers"
-            :items="databases"
+            :items="forms"
             select-all
             hide-actions
           >
@@ -102,6 +102,15 @@
               </td>
               <td class="text-xs-left select" @click.stop="select(props.item)">
                 {{ props.item.name }}
+              </td>
+              <td class="text-xs-left select" @click.stop="select(props.item)">
+                {{ props.item.database && props.item.database.name }}
+                <v-chip v-if="!props.item.database" color="red" text-color="white">
+                  <v-icon left>
+                    error
+                  </v-icon>
+                  {{ $t('AssociateDatabase') }}
+                </v-chip>
               </td>
               <td class="text-xs-left select" @click.stop="select(props.item)">
                 {{ props.item.updatedAt | date }}
@@ -135,6 +144,13 @@
               :rules="requiredRules"
               required
             />
+            <v-autocomplete
+              v-model="databaseId"
+              :items="databases"
+              item-text="name"
+              item-value="id"
+              :label="$t('Database')"
+            />
           </v-card-text>
           <v-card-actions>
             <v-spacer />
@@ -167,6 +183,7 @@ export default {
     return {
       requiredRules: [v => !!v || this.$t('Required')],
       name: null,
+      databaseId: null,
       selected: [],
       dialogRemove: false,
       dialogCreate: false,
@@ -179,6 +196,7 @@ export default {
     headers() {
       return [
         { text: this.$t('Name'), align: 'left', sortable: true, value: 'name' },
+        { text: this.$t('Database'), align: 'left', sortable: true, value: 'database.name' },
         { text: this.$t('UpdatedAt'), sortable: true, value: 'updatedAt' }
       ]
     },
@@ -188,18 +206,34 @@ export default {
           return item.organizationId === this.$route.params.id
         })
       }
+    }),
+    ...mapState('forms', {
+      forms(state) {
+        return state.list.filter((item) => {
+          return item.organizationId === this.$route.params.id
+        })
+      }
     })
   },
   async fetch({ store, params }) {
     service('databases')(store)
-    await store.dispatch('projects/find', {
+    service('forms')(store)
+    await store.dispatch('forms/find', {
       query: {
-        organizationId: params.id
+        organizationId: params.id,
+        $limit: -1
       }
     })
-    store.commit('title', 'Databases')
+    await store.dispatch('databases/find', {
+      query: {
+        organizationId: params.id,
+        $limit: -1
+      }
+    })
+    store.commit('title', 'Forms')
   },
   created() {
+    service('forms')(this.$store)
     service('databases')(this.$store)
   },
 
@@ -212,10 +246,11 @@ export default {
     },
     async create() {
       if (this.$refs.form.validate()) {
-        await this.$store.dispatch('databases/create', {
+        await this.$store.dispatch('forms/create', {
           name: this.name,
           organizationId: this.$route.params.id,
-          schema: {}
+          databaseId: this.databaseId,
+          doc: {}
         })
         this.dialogCreate = false
         this.$refs.form.reset()
@@ -223,13 +258,13 @@ export default {
     },
     async remove() {
       for (const item of this.selected) {
-        await this.$store.dispatch('databases/remove', item.id)
+        await this.$store.dispatch('forms/remove', item.id)
       }
       this.selected = []
       this.dialogRemove = false
     },
     select(item) {
-      this.$router.push(this.localePath({ name: 'organizations-id', params: { id: item.id } }))
+      this.$router.push(this.localePath({ name: 'forms-id', params: { id: item.id } }))
     }
   }
 }
