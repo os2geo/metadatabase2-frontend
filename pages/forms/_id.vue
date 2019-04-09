@@ -88,7 +88,7 @@
                   <v-icon>close</v-icon>
                 </v-btn>
               </v-toolbar>
-              <v-card-text class="fill-height">
+              <v-card-text>
                 <v-text-field
                   :label="$t('GroupName')"
                   :value="groupItem.name"
@@ -116,19 +116,9 @@
                     />
                   </div>
                 </template>
-                <v-sheet
-                  class="fill-height d-flex"
-                  color="grey lighten-3"
-                  @dragenter.prevent
-                  @dragleave.prevent
-                  @drop.prevent="dropField($event, groupIndex, -1)"
-                >
-                  <v-layout fill-height column justify-center align-center>
-                    <v-btn icon @click="addField(groupIndex)">
-                      <v-icon>add</v-icon>
-                    </v-btn>
-                  </v-layout>
-                </v-sheet>
+                <v-btn block outline color="primary" @click="addField(groupIndex)">
+                  <v-icon>add</v-icon>
+                </v-btn>
               </v-card-text>
             </v-card>
           </v-flex>
@@ -138,7 +128,7 @@
             d-flex
           >
             <v-sheet
-              class="d-flex min-height"
+              class="d-flex dropzone-group"
               color="grey lighten-3"
             >
               <v-layout fill-height column justify-center align-center>
@@ -192,7 +182,7 @@
           />
           <v-autocomplete
             v-model="fieldType"
-            :items="['email','date','number','radio','select','text','textarea','url']"
+            :items="['boolean ','email','date','number','radio','select','text','textarea','timestamp','url']"
             :label="$t('FieldType')"
           />
           <div v-show="['radio','select'].indexOf(fieldType) !==-1">
@@ -294,16 +284,14 @@ export default {
         return this.current.doc.groups || []
       },
       set(value) {
-        console.log(value)
         this.$store.dispatch('forms/patch', [this.$route.params.id, { doc: { ...this.current.doc, groups: value } }])
       }
     },
     group: {
       get() {
-        return this.currentGroupIndex !== null ? this.groups[this.currentGroupIndex] : { name: null, fields: [] }
+        return this.currentGroupIndex !== null && this.groups.length > this.currentGroupIndex ? this.groups[this.currentGroupIndex] : { name: null, fields: [] }
       },
       set(group) {
-        console.log('group', group)
         const groups = [ ...this.groups ]
         groups.splice(this.currentGroupIndex, 1, group)
         this.groups = groups
@@ -319,7 +307,7 @@ export default {
     },
     field: {
       get() {
-        return this.currentFieldIndex !== null ? this.fields[this.currentFieldIndex] : { name: null, type: 'text', required: false, values: [] }
+        return this.currentFieldIndex !== null && this.fields.length > this.currentFieldIndex ? this.fields[this.currentFieldIndex] : { name: null, column: null, type: 'text', required: false, values: [] }
       },
       set(field) {
         const fields = [ ...this.fields ]
@@ -410,7 +398,7 @@ export default {
     },
     addField(groupIndex) {
       const group = { ...this.groups[groupIndex] }
-      const fields = [ ...group.fields, { name: null, column: null, type: null, values: [] } ]
+      const fields = [ ...group.fields, { name: null, column: null, type: 'text', required: false, values: [] } ]
       const groups = [...this.groups]
       groups.splice(groupIndex, 1, { ...group, fields })
       this.groups = groups
@@ -456,23 +444,9 @@ export default {
 
     dragEnterGroup(e, index) {
       e.dataTransfer.dropEffect = 'move'
-      /*
-      const el = document.querySelector(`#group-${index}`)
-      console.log(this.currentGroupIndex, index, e)
-      if (this.currentGroupIndex < index) {
-        el.classList.add('group-enter-right')
-      } else if (this.currentGroupIndex > index) {
-        el.classList.add('group-enter-left')
-      }
-      */
     },
     dragLeaveGroup(e, index) {
       e.dataTransfer.dropEffect = 'move'
-      /*
-      const el = document.querySelector(`#group-${index}`)
-      el.classList.remove('group-enter-right')
-      el.classList.remove('group-enter-left')
-      */
     },
     dragStartGroup(e, groupIndex) {
       e.dataTransfer.setData('data', JSON.stringify({ type: 'group', groupIndex }))
@@ -484,6 +458,32 @@ export default {
         const groups = [...this.groups]
         groups.splice(index, 0, groups.splice(data.groupIndex, 1)[0])
         this.groups = groups
+      } else if (data.type === 'field') {
+        if (index === data.groupIndex) {
+          const groups = [...this.groups]
+          const group = { ...groups[index] }
+          const fields = [...group.fields]
+          const field = fields.splice(data.fieldIndex, 1)[0]
+          fields.push(field)
+          group.fields = fields
+          groups.splice(index, 1, group)
+          this.groups = groups
+        } else {
+          const groups = [...this.groups]
+          const fromGroup = { ...groups[data.groupIndex] }
+          const toGroup = { ...groups[index] }
+          const fromFields = [...fromGroup.fields]
+          const toFields = [...toGroup.fields]
+
+          const field = fromFields.splice(data.fieldIndex, 1)[0]
+          fromGroup.fields = fromFields
+          groups.splice(data.groupIndex, 1, fromGroup)
+
+          toFields.push(field)
+          toGroup.fields = toFields
+          groups.splice(index, 1, toGroup)
+          this.groups = groups
+        }
       }
     },
     dragEnterField(e, groupIndex, fieldIndex) {
@@ -499,16 +499,12 @@ export default {
     dropField(e, groupIndex, fieldIndex) {
       const data = JSON.parse(e.dataTransfer.getData('data'))
       if (data.type === 'field') {
+        e.stopPropagation()
         if (groupIndex === data.groupIndex) {
           const groups = [...this.groups]
           const group = { ...groups[groupIndex] }
           const fields = [...group.fields]
-          if (fieldIndex === -1) {
-            const field = fields.splice(data.fieldIndex, 1)[0]
-            fields.push(field)
-          } else {
-            fields.splice(fieldIndex, 0, fields.splice(data.fieldIndex, 1)[0])
-          }
+          fields.splice(fieldIndex, 0, fields.splice(data.fieldIndex, 1)[0])
           group.fields = fields
           groups.splice(groupIndex, 1, group)
           this.groups = groups
@@ -522,12 +518,7 @@ export default {
           const field = fromFields.splice(data.fieldIndex, 1)[0]
           fromGroup.fields = fromFields
           groups.splice(data.groupIndex, 1, fromGroup)
-
-          if (fieldIndex === -1) {
-            toFields.push(field)
-          } else {
-            toFields.splice(fieldIndex, 0, field)
-          }
+          toFields.splice(fieldIndex, 0, field)
           toGroup.fields = toFields
           groups.splice(groupIndex, 1, toGroup)
           this.groups = groups
@@ -551,7 +542,7 @@ export default {
           return {
             name: item.text,
             column: item.text,
-            type: item.type
+            type: ['byte', 'short', 'integer', 'long', 'double', 'float', 'half_float', 'scaled_float'].indexOf(item.type) === -1 ? item.type : 'number'
           }
         })
       }]
@@ -578,6 +569,8 @@ export default {
   border-left 2px solid
 .group-enter-right
   border-right 2px solid
-.min-height
+.dropzone-group
   min-height 400px
+.dropzone-field
+  min-height 56px
 </style>
