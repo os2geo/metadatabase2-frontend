@@ -60,6 +60,9 @@
             <v-btn flat color="primary" @click="showDialogCreate=true">
               {{ $t('CreateFromData') }}
             </v-btn>
+            <v-btn flat color="primary" nuxt :to="localePath({ name: 'search-form', params: { form: $route.params.id }})">
+              {{ $t('Show') }}
+            </v-btn>
           </v-card-actions>
         </v-card>
         <h2 class="title primary--text my-2">

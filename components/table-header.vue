@@ -1,7 +1,7 @@
 <template>
   <v-menu
+    v-model="menu"
     :close-on-content-click="false"
-    :value="menu"
     offset-y
   >
     <v-layout slot="activator" :class="`justify-${value.align}`" @click.stop="menu=true">
