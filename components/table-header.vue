@@ -72,9 +72,18 @@
           :disabled="disableFilter"
           clearable
           multiple
+          menu-props="closeOnContentClick"
+        />
+        <v-select
+          v-if="value.type === 'boolean'"
+          v-model="filter"
+          :label="$t('Select')"
+          :items="[{ text: $t('True'), value: true }, { text: $t('False'), value: false }]"
+          :disabled="disableFilter"
+          clearable
         />
         <v-text-field
-          v-if="value.type === 'text' && !isSelect"
+          v-if="['text','textarea'].indexOf(value.type) !== -1 && !isSelect"
           v-model="filter"
           :label="$t('Text')"
           :disabled="disableFilter"
@@ -134,7 +143,7 @@
           />
         </v-menu>
         <v-menu
-          v-if="value.type === 'date'"
+          v-if="['date', 'timestamp'].indexOf(value.type) !== -1"
           v-model="menuFrom"
           :close-on-content-click="false"
           full-width
@@ -155,7 +164,7 @@
           />
         </v-menu>
         <v-menu
-          v-if="value.type === 'date'"
+          v-if="['date', 'timestamp'].indexOf(value.type) !== -1"
           v-model="menuTo"
           :close-on-content-click="false"
           full-width

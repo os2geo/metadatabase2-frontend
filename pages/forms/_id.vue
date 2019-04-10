@@ -185,7 +185,7 @@
           />
           <v-autocomplete
             v-model="fieldType"
-            :items="['boolean ','email','date','number','radio','select','text','textarea','timestamp','url']"
+            :items="['boolean','email','date','number','radio','select','text','textarea','timestamp','url']"
             :label="$t('FieldType')"
           />
           <div v-show="['radio','select'].indexOf(fieldType) !==-1">

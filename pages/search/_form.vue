@@ -32,7 +32,7 @@
               <v-list-tile-title>{{ $t('Forms') }}</v-list-tile-title>
             </v-list-tile>
           </template>
-          <v-list-tile :to="localePath({ name: 'forms-id', params: $route.params })" active-class="primary white--text" nuxt>
+          <v-list-tile :to="localePath({ name: 'forms-id', params: { id: current.id} })" active-class="primary white--text" nuxt>
             <v-list-tile-title>{{ $store.state.forms.current.name }}</v-list-tile-title>
           </v-list-tile>
         </v-list-group>
@@ -47,7 +47,7 @@
               <v-flex>
                 <v-toolbar flat color="transparent">
                   <v-chip color="primary" dark class="mr-4">
-                    <v-avatar>
+                    <v-avatar color="primary lighten-1">
                       <v-icon>insert_drive_file</v-icon>
                     </v-avatar>
                     {{ pagination.total }}
@@ -514,6 +514,8 @@ export default {
             this.query[key] = { ...this.query[key], ...{ $lte: item.filter.to } }
           }
         } else if (item.type === 'number' && item.filter) {
+          this.query[key] = item.filter
+        } else if (item.type === 'boolean' && item.filter !== null) {
           this.query[key] = item.filter
         } else if (value !== null && value !== '') {
           this.query[key] = {
