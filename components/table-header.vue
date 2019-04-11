@@ -4,7 +4,11 @@
     :close-on-content-click="false"
     offset-y
   >
-    <v-layout slot="activator" :class="`justify-${value.align}`" @click.stop="menu=true">
+    <v-layout
+      slot="activator"
+      :class="`justify-${value.align}`"
+      @click.stop="menu=true"
+    >
       <v-icon
         v-show="showFilterIcon"
         small
@@ -278,7 +282,19 @@ export default {
       }
     },
     showFilterIcon() {
-      return this.filter && this.filter !== null && this.filter.length > 0
+      switch (typeof this.filter) {
+        case 'string':
+          return this.filter !== ''
+        case 'boolean':
+          return true
+        case 'number':
+          return true
+        default:
+          if (Array.isArray(this.filter)) {
+            return this.filter.length > 0
+          }
+          return false
+      }
     }
   },
   methods: {

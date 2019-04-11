@@ -150,82 +150,110 @@
               </v-flex>
             </v-layout>
           </div>
-
-          <v-flex
-            :class="$breakpoint.is('smAndUp') && 'elevation-1'"
-            d-flex
-            scroll-x
-            class="fixed-header white"
-          >
-            <v-data-table
-              :headers="visibleHeaders"
-              :items="data"
-              :total-items="pagination.total"
-              :custom-sort="sort"
-              hide-actions
-            >
-              <template slot="headers" slot-scope="props">
-                <tr>
-                  <th>
-                    <v-checkbox
-                      hide-details
-                      :input-value="checkboxClearValue"
-                      :indeterminate="!disableClear"
-                      :disabled="disableClear"
-                      @click.stop="clear()"
-                    />
-                  </th>
-                  <template v-for="(item, index) in props.headers">
-                    <th
-                      :id="`header-${index}`"
-                      :key="index"
-                      draggable
-                      @dragover.prevent
-                      @dragenter.prevent="tableHeaderDragEnter"
-                      @dragleave.prevent="tableHeaderDragLeave"
-                      @drop.prevent="tableHeaderDrop($event, item, index)"
-                      @dragstart="tableHeaderDragStart($event, item)"
-                    >
-                      <v-layout>
-                        <v-layout column justify-center>
-                          <table-header
-                            :value="item"
-                            :sorting="sorting"
-                            @update:sortBy="sorting.name=$event"
-                            @update:descending="sorting.descending=$event"
-                            @update:filter="item.filter=$event"
-                            @update:query="updateQuery()"
-                          />
-                        </v-layout>
-                        <v-spacer />
-                        <v-icon color="grey lighten-2 select" @click.stop="item.width=item.width===0?200:0">
-                          {{ item.width===0 ? 'chevron_left' : 'chevron_right' }}
-                        </v-icon>
-                      <!--
+          <v-container grid-list-md fill-height fluid pa-0>
+            <v-layout row fill-height>
+              <v-flex
+                :class="breakclass"
+                d-flex
+                scroll-x
+                class="fixed-header white ma-1 pa-0"
+              >
+                <v-data-table
+                  :headers="visibleHeaders"
+                  :items="data"
+                  :total-items="pagination.total"
+                  :custom-sort="sort"
+                  hide-actions
+                >
+                  <template slot="headers" slot-scope="props">
+                    <tr>
+                      <th>
+                        <v-checkbox
+                          hide-details
+                          :input-value="checkboxClearValue"
+                          :indeterminate="!disableClear"
+                          :disabled="disableClear"
+                          @click.stop="clear()"
+                        />
+                      </th>
+                      <template v-for="(item, index) in props.headers">
+                        <th
+                          :id="`header-${index}`"
+                          :key="index"
+                          draggable
+                          @dragover.prevent
+                          @dragenter.prevent="tableHeaderDragEnter"
+                          @dragleave.prevent="tableHeaderDragLeave"
+                          @drop.prevent="tableHeaderDrop($event, item, index)"
+                          @dragstart="tableHeaderDragStart($event, item)"
+                        >
+                          <v-layout ma-0>
+                            <v-layout column justify-center ma-0>
+                              <table-header
+                                :value="item"
+                                :sorting="sorting"
+                                @update:sortBy="sorting.name=$event"
+                                @update:descending="sorting.descending=$event"
+                                @update:filter="item.filter=$event"
+                                @update:query="updateQuery()"
+                              />
+                            </v-layout>
+                            <v-spacer />
+                            <v-icon color="grey lighten-2 select" @click.stop="item.width=item.width===0?200:0">
+                              {{ item.width===0 ? 'chevron_left' : 'chevron_right' }}
+                            </v-icon>
+                            <!--
                       <v-icon color="grey lighten-2" style="cursor: col-resize;" @mousedown="mousedown(item, $event)">
                         chevron_right
                       </v-icon>
                       -->
-                      </v-layout>
-                    </th>
+                          </v-layout>
+                        </th>
+                      </template>
+                    </tr>
                   </template>
-                </tr>
-              </template>
-              <template slot="items" slot-scope="props">
-                <td>
-                  <v-checkbox
-                    :input-value="selectionSet.hasOwnProperty(props.item._id)"
-                    primary
-                    hide-details
-                    @change="select($event, props.item._id)"
-                  />
-                </td>
-                <td v-for="(item, index) in visibleHeaders" :key="index" class="text-xs-left select text-truncate overflow-hidden" :style="item.width>0 && `max-width:${item.width}px;min-width:${item.width}px`" @click.stop="select(props.item)">
-                  {{ props.item[item.value] }}
-                </td>
-              </template>
-            </v-data-table>
-          </v-flex>
+                  <template slot="items" slot-scope="props">
+                    <tr class="select" :class="props.item._id === $route.params.id && 'accent lighten-4'">
+                      <td>
+                        <v-checkbox
+                          :input-value="selectionSet.hasOwnProperty(props.item._id)"
+                          primary
+                          hide-details
+                          @change="select($event, props.item._id)"
+                        />
+                      </td>
+                      <td v-for="(item, index) in visibleHeaders" :key="index" class="text-xs-left text-truncate overflow-hidden" :style="item.width>0 && `max-width:${item.width}px;min-width:${item.width}px`" @click.stop="$router.push(localePath({ name: 'search-form-id', params: { form: $route.params.form, id: props.item._id }}))">
+                        {{ props.item[item.value] }}
+                      </td>
+                    </tr>
+                  </template>
+                </v-data-table>
+              </v-flex>
+              <v-flex v-show="$route.params.hasOwnProperty('id')" :class="$route.params.hasOwnProperty('id') && 'xs6 d-flex'">
+                <v-card color="accent lighten-5" style="max-width:100%">
+                  <v-container fluid fill-height pa-0>
+                    <v-layout column ma-0>
+                      <v-toolbar card dense color="accent" dark>
+                        <v-spacer />
+                        <v-btn
+                          icon
+                          :to="localePath({ name: 'search-form', params: { form: $route.params.form } })"
+                          nuxt
+                        >
+                          <v-icon>
+                            close
+                          </v-icon>
+                        </v-btn>
+                      </v-toolbar>
+                      <v-flex d-flex scroll-y pa-0 fill-height>
+                        <nuxt-child />
+                      </v-flex>
+                    </v-layout>
+                  </v-container>
+                </v-card>
+              </v-flex>
+            </v-layout>
+          </v-container>
         </v-layout>
       </v-container>
 
@@ -364,6 +392,18 @@ export default {
     },
     avatar() {
       return this.$store.state.organizations.current.name
+    },
+    breakclass() {
+      const classes = []
+      if (this.$breakpoint.is('smAndUp')) {
+        classes.push('elevation-1')
+      }
+      if (this.$route.params.hasOwnProperty('id')) {
+        classes.push('xs6')
+      } else {
+        classes.push('xs12')
+      }
+      return classes.join(' ')
     }
   },
 
