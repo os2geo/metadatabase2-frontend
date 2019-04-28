@@ -21,12 +21,7 @@ export default {
       { hid: 'description', name: 'description', content: pkg.description }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-      {
-        rel: 'stylesheet',
-        href:
-          'https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons'
-      }
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
     ]
   },
 
@@ -78,8 +73,14 @@ export default {
         vueI18n
       }
     ],
-    'cookie-universal-nuxt'
+    'cookie-universal-nuxt',
+    'nuxt-webfontloader'
   ],
+  webfontloader: {
+    google: {
+      families: ['Roboto:300,400,500,700', 'Material+Icons']
+    }
+  },
   /*
   ** Axios module configuration
   */

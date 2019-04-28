@@ -74,20 +74,12 @@
                     <span>{{ $t('Import') }}</span>
                   </v-tooltip>
                   <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
-                    <v-btn slot="activator" icon @click="showExport()">
+                    <v-btn slot="activator" icon @click="exportExcel()">
                       <v-icon color="primary">
                         fas fa-file-export
                       </v-icon>
                     </v-btn>
                     <span>{{ $t('Export') }}</span>
-                  </v-tooltip>
-                  <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
-                    <v-btn slot="activator" icon @click="showCreate()">
-                      <v-icon color="primary">
-                        add
-                      </v-icon>
-                    </v-btn>
-                    <span>{{ $t('Add') }}</span>
                   </v-tooltip>
                   <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
                     <v-btn slot="activator" :disabled="disableClear" icon @click="dialogRemove=true">
@@ -143,20 +135,12 @@
                             {{ $t('Import') }}
                           </v-list-tile-content>
                         </v-list-tile>
-                        <v-list-tile @click="showExport()">
+                        <v-list-tile @click="exportExcel()">
                           <v-list-tile-action>
                             <v-icon>fas fa-file-export</v-icon>
                           </v-list-tile-action>
                           <v-list-tile-content>
                             {{ $t('Export') }}
-                          </v-list-tile-content>
-                        </v-list-tile>
-                        <v-list-tile @click="showCreate()">
-                          <v-list-tile-action>
-                            <v-icon>add</v-icon>
-                          </v-list-tile-action>
-                          <v-list-tile-content>
-                            {{ $t('Add') }}
                           </v-list-tile-content>
                         </v-list-tile>
                         <v-list-tile
@@ -237,11 +221,6 @@
                         <v-icon color="grey lighten-2 select" @click.stop="item.width=item.width===0?200:0">
                           {{ item.width===0 ? 'chevron_left' : 'chevron_right' }}
                         </v-icon>
-                      <!--
-                      <v-icon color="grey lighten-2" style="cursor: col-resize;" @mousedown="mousedown(item, $event)">
-                        chevron_right
-                      </v-icon>
-                      -->
                       </v-layout>
                     </th>
                   </template>
@@ -270,42 +249,6 @@
       @remove="remove()"
     />
 
-    <v-dialog
-      v-model="dialogCreate"
-      persistent
-      max-width="500"
-    >
-      <v-form ref="form" v-model="valid" @submit.prevent>
-        <v-card>
-          <v-card-title>
-            {{ $t('Create') }}
-          </v-card-title>
-          <v-card-text>
-            <v-text-field
-              ref="focus"
-              v-model="name"
-              :label="$t('Name')"
-              :rules="requiredRules"
-              required
-            />
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn color="primary" flat @click="dialogCreate=false">
-              {{ $t('Cancel') }}
-            </v-btn>
-            <v-btn
-              dark
-              type="submit"
-              color="primary"
-              @click="create()"
-            >
-              {{ $t('Create') }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-form>
-    </v-dialog>
     <v-dialog v-model="dialogImport" max-width="500" persistent>
       <v-card>
         <v-card-title>
@@ -325,7 +268,14 @@
             :items="sheets"
             :label="$t('SelectSheet')"
           />
+          <v-alert
+            :value="true"
+            type="warning"
+          >
+            {{ $t('WarningImport') }}
+          </v-alert>
         </v-card-text>
+
         <v-card-actions>
           <v-spacer />
           <v-btn color="primary" flat @click="dialogImport=false">
@@ -353,7 +303,7 @@ import tableHeader from '~/components/table-header.vue'
 import mainDrawer from '~/components/main-drawer'
 import mainToolbar from '~/components/main-toolbar'
 import { mapGetters } from 'vuex'
-const serviceData = client.service('data')
+
 export default {
   components: { mainDrawer, mainToolbar, dialogRemove, tableHeader },
   middleware: ['auth', 'databases'],
@@ -372,7 +322,6 @@ export default {
       selectionSet: {},
       dialogImport: false,
       dialogRemove: false,
-      dialogCreate: false,
       valid: null,
       sheets: [],
       sheet: null,
@@ -434,7 +383,6 @@ export default {
     }
     const service = client.service(`es/${params.id}`)
     res = await service.find()
-    console.log(res)
     const { data, ...pagination } = res
     return {
       headers,
@@ -448,45 +396,11 @@ export default {
   mounted() {
     const target = document.querySelector('.v-table__overflow')
     target.addEventListener('scroll', this.onScroll, { pasive: true })
-    const updateItem = (item) => {
-      this.$set(this.index, item.id, item)
-    }
-    serviceData.on('created', (item) => {
-      console.log('created', item)
-      // updateItem(item)
-    })
-    serviceData.on('updated', item =>
-      updateItem(item)
-    )
-    serviceData.on('patched', item =>
-      updateItem(item)
-    )
-    serviceData.on('removed', (item) => {
-      console.log('removed', item)
-      this.$delete(this.index, item.id)
-    })
   },
   created() {
     service('databases')(this.$store)
   },
   methods: {
-    showCreate() {
-      this.dialogCreate = true
-      this.$nextTick(() =>
-        this.$refs.focus.$el.getElementsByTagName('input')[0].focus()
-      )
-    },
-    async create() {
-      if (this.$refs.form.validate()) {
-        await this.$store.dispatch('databases/create', {
-          name: this.name,
-          organizationId: this.$route.params.id,
-          schema: {}
-        })
-        this.dialogCreate = false
-        this.$refs.form.reset()
-      }
-    },
     async remove() {
       const service = client.service(`es/${this.$route.params.id}`)
       for (const id of Object.keys(this.selectionSet)) {
@@ -500,9 +414,6 @@ export default {
       this.clear()
       this.dialogRemove = false
     },
-    edit(item) {
-      this.$router.push(this.localePath({ name: 'organizations-id', params: { id: item.id } }))
-    },
     select(state, id) {
       if (state) {
         this.$set(this.selectionSet, id, id)
@@ -510,7 +421,42 @@ export default {
         this.$delete(this.selectionSet, id)
       }
     },
+    async exportExcel() {
+      const service = client.service(`es/${this.$route.params.id}`)
+      let data = []
+      let res = await service.find()
+      data = [...data, ...res.data]
+      while (res.total > res.skip + res.limit) {
+        res = await service.find({
+          query: {
+            $skip: res.limit + res.skip
+          }
+        })
+        data = [...data, ...res.data]
+      }
+      /*
+      const types = {}
+      this.headers.forEach((item) => {
+        types[item.value] = item.type
+      })
+      data.forEach((item) => {
+        delete item._meta
+        Object.keys(item).forEach((key) => {
+          if (types[key] === 'date') {
+            item[key] = new Date(item[key])
+          }
+        })
+      })
+      */
+      const ws = XLSX.utils.json_to_sheet(data)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Ark 1')
+      XLSX.writeFile(wb, `${this.$route.params.id}.xlsx`)
+    },
     async importExcel() {
+      const serviceIndices = client.service('indices')
+      await serviceIndices.remove(this.$route.params.id)
+      await serviceIndices.create({ id: this.$route.params.id })
       const json = XLSX.utils.sheet_to_json(this.$options.workbook.Sheets[this.sheet])
       const json2 = json.map((item) => {
         if (item.hasOwnProperty('_rev')) {
@@ -519,6 +465,7 @@ export default {
         }
         return item
       })
+
       const service = client.service(`es/${this.$route.params.id}`)
       await service.create(json2)
       this.dialogImport = false
@@ -620,7 +567,6 @@ export default {
           }
         }
       })
-      console.log(this.query, this.sorting)
       if (this.sorting.name) {
         const header = this.headers.find((item) => {
           return item.value === this.sorting.name
@@ -644,23 +590,6 @@ export default {
       this.checkboxClearValue = false
       this.selectionSet = {}
     },
-    /*
-    resize column
-    mousedown(item, event) {
-      const mousemove = (event) => {
-        item.width = item.width + event.movementX
-      }
-      const mouseup = () => {
-        console.log('mouseup')
-        event.target.removeEventListener('mousemove', mousemove)
-        event.target.removeEventListener('mouseup', mouseup)
-        event.target.removeEventListener('mouseleave', mouseup)
-      }
-      event.target.addEventListener('mousemove', mousemove)
-      event.target.addEventListener('mouseup', mouseup)
-      event.target.addEventListener('mouseleave', mouseup)
-    },
-    */
     tableHeaderDragStart(e, header) {
       e.dataTransfer.setData('header', header.value)
       // e.dropEffect = 'move'

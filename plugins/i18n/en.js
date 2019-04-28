@@ -50,10 +50,15 @@ export default {
   Search: 'Search',
   Select: 'Select',
   SelectSheet: 'Select sheet',
+  Show: 'Show',
   ShowColumns: 'Show columns',
   Text: 'Text',
   ToDate: 'To date',
   ToTime: 'To time',
   UpdatedAt: 'Updated',
-  Users: 'Users'
+  Users: 'Users',
+  ValidateErrorTitle: 'Data is not saved!',
+  ValidateErrorBody: 'Required fields are missing.',
+  ValidateSuccessTitle: 'Data is saved',
+  WarningImport: 'All data in the database will be delted!'
 }

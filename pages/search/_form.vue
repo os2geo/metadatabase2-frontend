@@ -153,8 +153,8 @@
           <v-container grid-list-md fill-height fluid pa-0>
             <v-layout row fill-height>
               <v-flex
-                :class="breakclass"
-                d-flex
+                v-show="!maximize"
+                :class="breakClass"
                 scroll-x
                 class="fixed-header white ma-1 pa-0"
               >
@@ -202,11 +202,6 @@
                             <v-icon color="grey lighten-2 select" @click.stop="item.width=item.width===0?200:0">
                               {{ item.width===0 ? 'chevron_left' : 'chevron_right' }}
                             </v-icon>
-                            <!--
-                      <v-icon color="grey lighten-2" style="cursor: col-resize;" @mousedown="mousedown(item, $event)">
-                        chevron_right
-                      </v-icon>
-                      -->
                           </v-layout>
                         </th>
                       </template>
@@ -229,12 +224,20 @@
                   </template>
                 </v-data-table>
               </v-flex>
-              <v-flex v-show="$route.params.hasOwnProperty('id')" :class="$route.params.hasOwnProperty('id') && 'xs6 d-flex'">
+              <v-flex v-show="$route.params.hasOwnProperty('id')" :class="infoClass">
                 <v-card color="accent lighten-5" style="max-width:100%">
                   <v-container fluid fill-height pa-0>
                     <v-layout column ma-0>
                       <v-toolbar card dense color="accent" dark>
                         <v-spacer />
+                        <v-btn
+                          icon
+                          @click="maximize=!maximize"
+                        >
+                          <v-icon>
+                            {{ maximize? 'minimize' : 'maximize' }}
+                          </v-icon>
+                        </v-btn>
                         <v-btn
                           icon
                           :to="localePath({ name: 'search-form', params: { form: $route.params.form } })"
@@ -264,24 +267,134 @@
 
       <v-dialog
         v-model="dialogCreate"
-        persistent
-        max-width="500"
+        scrollable
+        hide-overlay
       >
-        <v-form ref="form" v-model="valid" @submit.prevent>
-          <v-card>
-            <v-card-title>
+        <v-form ref="form" v-model="valid" style="width:100%" @submit.prevent>
+          <v-card color="accent lighten-5">
+            <v-card-title class="primary dark title white--text">
               {{ $t('Create') }}
             </v-card-title>
             <v-card-text>
-              <v-text-field
-                ref="focus"
-                v-model="name"
-                :label="$t('Name')"
-                :rules="requiredRules"
-                required
-              />
+              <v-container grid-list-md fluid>
+                <v-layout row wrap>
+                  <v-flex
+                    v-for="(groupItem, groupIndex) in groups"
+                    :key="groupIndex"
+                    xs12
+                    sm6
+                    md4
+                    lg3
+                    d-flex
+                  >
+                    <v-card>
+                      <v-toolbar color="accent lighten-3" dense card>
+                        <v-toolbar-title>
+                          {{ groupItem.name }}
+                        </v-toolbar-title>
+                      </v-toolbar>
+                      <v-card-text>
+                        <template v-for="(fieldItem, fieldIndex) in groupItem.fields">
+                          <div
+                            :key="fieldIndex"
+                          >
+                            <v-text-field
+                              v-if="fieldItem.type==='text'"
+                              v-model="doc[fieldItem.column]"
+                              :label="fieldItem.name"
+                              :required="fieldItem.isRequired"
+                              :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
+                            />
+                            <v-text-field
+                              v-if="fieldItem.type==='url'"
+                              v-model="doc[fieldItem.column]"
+                              :label="fieldItem.name"
+                              :required="fieldItem.isRequired"
+                              :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
+                              type="url"
+                              append-outer-icon="launch"
+                              @click:append-outer="openLink(fieldItem)"
+                            />
+                            <v-textarea
+                              v-if="fieldItem.type==='textarea'"
+                              v-model="doc[fieldItem.column]"
+                              :label="fieldItem.name"
+                              :required="fieldItem.isRequired"
+                              :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
+                            />
+                            <v-text-field
+                              v-if="fieldItem.type==='timestamp'"
+                              :value="doc[fieldItem.column]"
+                              :label="fieldItem.name"
+                              readonly
+                            />
+                            <v-select
+                              v-if="fieldItem.type==='select'"
+                              v-model="doc[fieldItem.column]"
+                              :items="fieldItem.values"
+                              :label="fieldItem.name"
+                              :required="fieldItem.isRequired"
+                              :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
+                            />
+                            <v-checkbox
+                              v-if="fieldItem.type==='boolean'"
+                              v-model="doc[fieldItem.column]"
+                              :label="fieldItem.name"
+                              :required="fieldItem.isRequired"
+                              :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
+                            />
+                            <v-menu
+                              v-if="fieldItem.type==='date'"
+                              v-model="menus[fieldIndex]"
+                              :close-on-content-click="false"
+                              :nudge-right="40"
+                              lazy
+                              transition="scale-transition"
+                              offset-y
+                              full-width
+                              min-width="290px"
+                            >
+                              <template v-slot:activator="{ on }">
+                                <v-text-field
+                                  v-model="doc[fieldItem.column]"
+                                  :label="fieldItem.name"
+                                  :required="fieldItem.isRequired"
+                                  :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
+                                  readonly
+                                  v-on="on"
+                                />
+                              </template>
+                              <v-date-picker
+                                v-model="doc[fieldItem.column]"
+                                :locale="locale"
+                                no-title
+                                @input="menus[fieldIndex]=false"
+                              />
+                            </v-menu>
+                            <v-radio-group
+                              v-if="fieldItem.type==='radio'"
+                              v-model="doc[fieldItem.column]"
+                              :mandatory="false"
+                              :label="fieldItem.name"
+                              :required="fieldItem.isRequired"
+                              :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
+                            >
+                              <v-radio
+                                v-for="(value, valueIndex) in fieldItem.values"
+                                :key="valueIndex"
+                                :label=" value"
+                                :value="value"
+                              />
+                            </v-radio-group>
+                          </div>
+                        </template>
+                      </v-card-text>
+                    </v-card>
+                  </v-flex>
+                </v-layout>
+              </v-container>
             </v-card-text>
-            <v-card-actions>
+            <v-card-actions class="primary lighten-5">
               <v-spacer />
               <v-btn color="primary" flat @click="dialogCreate=false">
                 {{ $t('Cancel') }}
@@ -334,6 +447,31 @@
         </v-card>
       </v-dialog>
     </v-content>
+    <v-snackbar
+      v-model="snackbar"
+      :color="color"
+      :timeout="2000"
+      multi-line
+    >
+      <v-icon large dark>
+        {{ color==='error'?'error':'save' }}
+      </v-icon>
+      <div class="ml-3">
+        <h1 class="title">
+          {{ snackbarTitle }}
+        </h1>
+        <div v-show="color==='error'">
+          {{ snackbarBody }}
+        </div>
+      </div>
+      <v-btn
+        dark
+        flat
+        @click="snackbar = false"
+      >
+        {{ $t('Close') }}
+      </v-btn>
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -345,7 +483,7 @@ import tableHeader from '~/components/table-header.vue'
 import mainDrawer from '~/components/main-drawer'
 import mainToolbar from '~/components/main-toolbar'
 import { mapGetters } from 'vuex'
-const serviceData = client.service('data')
+
 export default {
   components: { mainDrawer, mainToolbar, dialogRemove, tableHeader },
   middleware: ['search'],
@@ -374,11 +512,29 @@ export default {
       headers: [],
       data: [],
       pagination: {},
-      drawer: null
+      drawer: null,
+      menus: {},
+      doc: {},
+      color: null,
+      snackbarTitle: null,
+      snackbarBody: null,
+      snackbar: false
     }
   },
   computed: {
     ...mapGetters('forms', ['current']),
+    form() {
+      return this.current.doc
+    },
+    groups() {
+      return this.form.groups
+    },
+    locale() {
+      const l = this.$i18n.locales.find((item) => {
+        return item.code === this.$i18n.locale
+      })
+      return l ? l.iso : 'da-DK'
+    },
     disableClear() {
       return Object.keys(this.selectionSet).length === 0
     },
@@ -393,17 +549,33 @@ export default {
     avatar() {
       return this.$store.state.organizations.current.name
     },
-    breakclass() {
+    breakClass() {
       const classes = []
       if (this.$breakpoint.is('smAndUp')) {
         classes.push('elevation-1')
       }
       if (this.$route.params.hasOwnProperty('id')) {
-        classes.push('xs6')
+        if (!this.maximize) {
+          classes.push('xs6 d-flex')
+        }
       } else {
-        classes.push('xs12')
+        classes.push('xs12 d-flex')
       }
       return classes.join(' ')
+    },
+    infoClass() {
+      if (this.$route.params.hasOwnProperty('id')) {
+        return `${this.maximize ? 'xs12' : 'xs6'} d-flex`
+      }
+      return ''
+    },
+    maximize: {
+      get() {
+        return this.$store.state.maximize
+      },
+      set(value) {
+        this.$store.commit('maximize', value)
+      }
     }
   },
 
@@ -440,41 +612,77 @@ export default {
   mounted() {
     const target = document.querySelector('.v-table__overflow')
     target.addEventListener('scroll', this.onScroll, { pasive: true })
-    const updateItem = (item) => {
-      this.$set(this.index, item.id, item)
-    }
-    serviceData.on('created', (item) => {
+
+    const service = client.service(`es/${this.$store.state.forms.current.databaseId}`)
+    service.on('created', (item) => {
       console.log('created', item)
-      // updateItem(item)
     })
-    serviceData.on('updated', item =>
-      updateItem(item)
-    )
-    serviceData.on('patched', item =>
-      updateItem(item)
-    )
-    serviceData.on('removed', (item) => {
+    service.on('updated', (item) => {
+      console.log('updated', item)
+      const index = this.data.findIndex((doc) => {
+        return doc._id === item._id
+      })
+      if (index !== -1) {
+        this.data.splice(index, 1, item)
+      }
+    })
+    service.on('patched', (item) => {
+      console.log('patched', item)
+      const index = this.data.findIndex((doc) => {
+        return doc._id === item._id
+      })
+      if (index !== -1) {
+        this.data.splice(index, 1, item)
+      }
+    })
+    service.on('removed', (item) => {
       console.log('removed', item)
-      this.$delete(this.index, item.id)
     })
   },
 
   methods: {
+    openLink(field) {
+      window.open(this.doc[field.column], '_blank')
+    },
     showCreate() {
       this.dialogCreate = true
+      /*
       this.$nextTick(() =>
         this.$refs.focus.$el.getElementsByTagName('input')[0].focus()
       )
+      */
     },
     async create() {
       if (this.$refs.form.validate()) {
-        await this.$store.dispatch('databases/create', {
-          name: this.name,
-          organizationId: this.$route.params.id,
-          schema: {}
+        const doc = { ...this.doc }
+        this.form.groups.forEach((group) => {
+          group.fields.forEach((field) => {
+            if (field.type === 'timestamp') {
+              doc[field.column] = (new Date()).toISOString()
+            }
+            if (field.type === 'date' && doc.hasOwnProperty(field.column)) {
+              doc[field.column] = new Date(doc[field.column])
+            }
+          })
         })
-        this.dialogCreate = false
-        this.$refs.form.reset()
+        try {
+          await client.service(`es/${this.$store.state.forms.current.databaseId}`).create(doc)
+          this.dialogCreate = false
+          this.$refs.form.reset()
+          this.color = 'success'
+          this.snackbarTitle = this.$t('ValidateSuccessTitle')
+          this.snackbar = true
+        } catch (err) {
+          this.color = 'error'
+          this.snackbarTitle = this.$t('ValidateErrorTitle')
+          this.snackbarBody = err
+          this.snackbar = true
+        }
+      } else {
+        this.color = 'error'
+        this.snackbarTitle = this.$t('ValidateErrorTitle')
+        this.snackbarBody = this.$t('ValidateErrorBody')
+        this.snackbar = true
       }
     },
     async remove() {
