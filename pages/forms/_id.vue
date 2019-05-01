@@ -85,18 +85,18 @@
               @drop.prevent="dropGroup($event, groupIndex)"
               @dragstart.stop="dragStartGroup($event, groupIndex)"
             >
-              <v-toolbar color="transparent" dense card>
+              <v-toolbar color="primary" dark dense card>
+                <v-text-field
+                  :placeholder="$t('GroupName')"
+                  :value="groupItem.name"
+                  @input="inputGroupName($event, groupIndex)"
+                />
                 <v-spacer />
                 <v-btn icon @click="removeGroup(groupIndex)">
                   <v-icon>close</v-icon>
                 </v-btn>
               </v-toolbar>
               <v-card-text>
-                <v-text-field
-                  :label="$t('GroupName')"
-                  :value="groupItem.name"
-                  @input="inputGroupName($event, groupIndex)"
-                />
                 <template v-for="(fieldItem, fieldIndex) in groupItem.fields">
                   <div
                     :key="fieldIndex"

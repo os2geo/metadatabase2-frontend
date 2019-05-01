@@ -50,10 +50,15 @@ export default {
   Search: 'Søg',
   Select: 'Vælg',
   SelectSheet: 'Vælg ark',
+  Show: 'Vis',
   ShowColumns: 'Vis kolonner',
   Text: 'Tekst',
   ToDate: 'Til dato',
   ToTime: 'Til tid',
   UpdatedAt: 'Updateret',
-  Users: 'Brugere'
+  Users: 'Brugere',
+  ValidateErrorTitle: 'Data er ikke gemt!',
+  ValidateErrorBody: 'Der mangler at blive udfyldt påkrævede felter.',
+  ValidateSuccessTitle: 'Data er gemt',
+  WarningImport: 'Alle eksistrende data i databasen bliver slettet!'
 }

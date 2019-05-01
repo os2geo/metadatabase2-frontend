@@ -5,7 +5,8 @@ export const state = () => ({
   title: null,
   sprites: [],
   sprite: '',
-  modules: {}
+  modules: {},
+  maximize: false
 })
 export const getters = {
   title(state) {
@@ -22,6 +23,9 @@ export const mutations = {
   },
   addModule(state, data) {
     state.modules[data] = true
+  },
+  maximize(state, data) {
+    state.maximize = data
   }
 }
 

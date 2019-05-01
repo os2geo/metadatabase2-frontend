@@ -30,8 +30,17 @@
           {{ locale.name }}
         </v-list-tile>
         <v-divider />
-        <v-list-tile @click="$router.replace(localePath({ name: 'logout' }))">
+        <v-list-tile
+          v-if="$store.state.auth.payload"
+          @click="$router.replace(localePath({ name: 'logout' }))"
+        >
           {{ $t('Logout') }}
+        </v-list-tile>
+        <v-list-tile
+          v-else
+          @click="login"
+        >
+          {{ $t('Login') }}
         </v-list-tile>
       </v-list>
     </v-menu>
@@ -65,14 +74,22 @@ export default {
       return this.user ? this.user.name : ''
     },
     userInitials() {
-      return this.user ? this.user.name[0] : ''
+      return this.user ? this.user.name[0] : '?'
     },
     userId() {
       return this.user ? this.user.id : null
     }
   },
 
-  methods: {}
+  methods: {
+    login() {
+      this.$cookies.set('redirect', this.$route.fullPath, {
+        path: '/',
+        maxAge: 60 * 60 * 24
+      })
+      this.$router.replace(this.localePath({ name: 'login' }))
+    }
+  }
 }
 </script>
 
