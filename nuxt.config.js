@@ -4,8 +4,7 @@ import vueI18n from './plugins/i18n'
 
 export default {
   env: {
-    FEATHERS: process.env.FEATHERS || 'http://localhost:3030',
-    REST: process.env.REST || 'http://localhost:3030'
+    BACKEND: process.env.FEATHERS || 'http://localhost:3030'
   },
 
   mode: 'universal',

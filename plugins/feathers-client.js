@@ -5,8 +5,8 @@ import auth from '@feathersjs/authentication-client'
 import io from 'socket.io-client'
 import { CookieStorage } from 'cookie-storage'
 import axios from 'axios'
-const restClient = rest(process.env.REST)
-const socket = io(process.env.FEATHERS, { transports: ['websocket'] })
+const restClient = rest(process.env.BACKEND)
+const socket = io(process.env.BACKEND, { transports: ['websocket'] })
 const feathersClient = feathers()
 if (process.client) {
   feathersClient.configure(socketio(socket))
