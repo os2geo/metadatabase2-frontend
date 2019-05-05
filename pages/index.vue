@@ -23,7 +23,7 @@
           <v-layout align-center>
             <v-flex>
               <p class="display-1">
-                Her er det mulight at administrere og søge informationer, der beskriver geodatasæt og geodatatjenester
+                Her er det muligt at administrere og søge informationer, der beskriver geodatasæt og geodatatjenester
               </p>
               <v-layout column align-center pa-4>
                 <v-btn

@@ -250,46 +250,52 @@
     />
 
     <v-dialog v-model="dialogImport" max-width="500" persistent>
-      <v-card>
-        <v-card-title>
-          {{ $t('ImportExcel') }}
-        </v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="filename"
-            :hint="$t('ChooseFile')"
-            :label="$t('Filename')"
-            readonly
-            append-icon="attach_file"
-            @click:append="fileselect()"
-          />
-          <v-select
-            v-model="sheet"
-            :items="sheets"
-            :label="$t('SelectSheet')"
-          />
-          <v-alert
-            :value="true"
-            type="warning"
-          >
-            {{ $t('WarningImport') }}
-          </v-alert>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn color="primary" flat @click="dialogImport=false">
-            {{ $t('Cancel') }}
-          </v-btn>
-          <v-btn
-            dark
-            color="primary"
-            @click="importExcel()"
-          >
-            {{ $t('Import') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
+      <v-form ref="importForm" @submit.prevent>
+        <v-card>
+          <v-card-title>
+            {{ $t('ImportExcel') }}
+          </v-card-title>
+          <v-card-text>
+            <v-text-field
+              v-model="filename"
+              :hint="$t('ChooseFile')"
+              :label="$t('Filename')"
+              :rules="requiredRules"
+              readonly
+              required
+              append-icon="attach_file"
+              @click:append="fileselect()"
+            />
+            <v-select
+              v-model="sheet"
+              :items="sheets"
+              :label="$t('SelectSheet')"
+              :rules="requiredRules"
+              required
+            />
+            <v-alert
+              :value="true"
+              type="warning"
+            >
+              {{ $t('WarningImport') }}
+            </v-alert>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn color="primary" flat @click="dialogImport=false">
+              {{ $t('Cancel') }}
+            </v-btn>
+            <v-btn
+              dark
+              color="primary"
+              type="submit"
+              @click="importExcel()"
+            >
+              {{ $t('Import') }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-form>
     </v-dialog>
   </v-app>
 </template>
@@ -362,12 +368,10 @@ export default {
 
   async asyncData({ store, params }) {
     let res = await client.service('indices').get(params.id)
-    console.log(res)
     let headers = []
     if (res.hasOwnProperty(params.id) && res[params.id].hasOwnProperty('mappings') && res[params.id].mappings.hasOwnProperty('docs') && res[params.id].mappings.docs.hasOwnProperty('properties')) {
       headers = Object.keys(res[params.id].mappings.docs.properties).map((key) => {
         const header = res[params.id].mappings.docs.properties[key]
-        console.log(header)
         return {
           align: 'left',
           text: key,
@@ -454,21 +458,49 @@ export default {
       XLSX.writeFile(wb, `${this.$route.params.id}.xlsx`)
     },
     async importExcel() {
-      const serviceIndices = client.service('indices')
-      await serviceIndices.remove(this.$route.params.id)
-      await serviceIndices.create({ id: this.$route.params.id })
-      const json = XLSX.utils.sheet_to_json(this.$options.workbook.Sheets[this.sheet])
-      const json2 = json.map((item) => {
-        if (item.hasOwnProperty('_rev')) {
-          const { _rev, ...doc } = item
-          return doc
-        }
-        return item
-      })
+      if (this.$refs.importForm.validate()) {
+        const serviceIndices = client.service('indices')
+        await serviceIndices.remove(this.$route.params.id)
+        await serviceIndices.create({ id: this.$route.params.id })
+        const json = XLSX.utils.sheet_to_json(this.$options.workbook.Sheets[this.sheet])
+        const json2 = json.map((item) => {
+          if (item.hasOwnProperty('_rev')) {
+            const { _rev, ...doc } = item
+            return doc
+          }
+          return item
+        })
 
-      const service = client.service(`es/${this.$route.params.id}`)
-      await service.create(json2)
-      this.dialogImport = false
+        const service = client.service(`es/${this.$route.params.id}`)
+        this.data = await service.create(json2)
+        const res = await client.service('indices').get(this.$route.params.id)
+        if (res.hasOwnProperty(this.$route.params.id) && res[this.$route.params.id].hasOwnProperty('mappings') && res[this.$route.params.id].mappings.hasOwnProperty('docs') && res[this.$route.params.id].mappings.docs.hasOwnProperty('properties')) {
+          this.headers = Object.keys(res[this.$route.params.id].mappings.docs.properties).map((key) => {
+            const header = res[this.$route.params.id].mappings.docs.properties[key]
+            return {
+              align: 'left',
+              text: key,
+              value: key,
+              visible: true,
+              type: header.type,
+              filter: null,
+              menu: false,
+              sortable: false,
+              width: 200
+            }
+          })
+        }
+        /*
+        let current = 0
+        for (const doc of json2) {
+          current++
+          await service.create(doc)
+          this.progress = 100 * current / json2.length
+        }
+        */
+        this.dialogImport = false
+        this.$refs.importForm.reset()
+      }
     },
     async fileselect(id) {
       const fileDialog = (...args) => {

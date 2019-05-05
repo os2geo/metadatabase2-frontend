@@ -104,6 +104,17 @@
                 {{ props.item.name }}
               </td>
               <td class="text-xs-left select" @click.stop="select(props.item)">
+                {{ props.item.email }}
+              </td>
+              <td class="text-xs-left select" @click.stop="select(props.item)">
+                {{ props.item.role.name }}
+              </td>
+              <td class="text-xs-left select" @click.stop="select(props.item)">
+                <v-icon v-show="props.item.isVerified">
+                  check
+                </v-icon>
+              </td>
+              <td class="text-xs-left select" @click.stop="select(props.item)">
                 {{ props.item.updatedAt | date }}
               </td>
             </template>
@@ -141,12 +152,6 @@
               :rules="requiredRules"
               required
             />
-            <v-text-field
-              v-model="password"
-              :label="$t('Password')"
-              :rules="requiredRules"
-              required
-            />
             <v-select
               v-model="role"
               :items="roles"
@@ -172,6 +177,57 @@
         </v-card>
       </v-form>
     </v-dialog>
+
+    <v-dialog
+      v-model="dialogEdit"
+      persistent
+      max-width="500"
+    >
+      <v-form ref="formEdit" @submit.prevent>
+        <v-card>
+          <v-card-title>
+            {{ $t('Edit') }}
+          </v-card-title>
+          <v-card-text>
+            <v-text-field
+              ref="focus"
+              v-model="current.name"
+              :label="$t('Name')"
+              :rules="requiredRules"
+              required
+            />
+            <v-text-field
+              v-model="current.email"
+              :label="$t('Email')"
+              :rules="requiredRules"
+              required
+              readonly
+            />
+            <v-select
+              v-model="current.roleId"
+              :items="roles"
+              :label="$t('Role')"
+              :rules="requiredRules"
+              required
+            />
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn color="primary" flat @click="dialogEdit=false">
+              {{ $t('Cancel') }}
+            </v-btn>
+            <v-btn
+              dark
+              type="submit"
+              color="primary"
+              @click="update()"
+            >
+              {{ $t('Update') }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-form>
+    </v-dialog>
   </v-content>
 </template>
 
@@ -187,13 +243,14 @@ export default {
       requiredRules: [v => !!v || this.$t('Required')],
       name: null,
       email: null,
-      password: null,
       role: null,
       selected: [],
       dialogRemove: false,
       dialogCreate: false,
+      dialogEdit: false,
       valid: null,
-      search: null
+      search: null,
+      current: {}
     }
   },
 
@@ -202,6 +259,8 @@ export default {
       return [
         { text: this.$t('Name'), align: 'left', sortable: true, value: 'name' },
         { text: this.$t('Email'), align: 'left', sortable: true, value: 'email' },
+        { text: this.$t('Role'), align: 'left', sortable: true, value: 'role.name' },
+        { text: this.$t('Verified'), align: 'left', sortable: true, value: 'isVerified' },
         { text: this.$t('UpdatedAt'), sortable: true, value: 'updatedAt' }
       ]
     },
@@ -249,13 +308,20 @@ export default {
         this.$refs.focus.$el.getElementsByTagName('input')[0].focus()
       )
     },
+    async update() {
+      if (this.$refs.formEdit.validate()) {
+        await this.$store.dispatch('users/patch', [this.current.id, { name: this.current.name, roleId: this.current.roleId }])
+        this.dialogEdit = false
+        this.$refs.formEdit.reset()
+      }
+    },
     async create() {
       if (this.$refs.form.validate()) {
         await this.$store.dispatch('users/create', {
           name: this.name,
           organizationId: this.$route.params.id,
-          email: this.email,
-          password: this.password
+          roleId: this.role,
+          email: this.email
         })
         this.dialogCreate = false
         this.$refs.form.reset()
@@ -269,7 +335,8 @@ export default {
       this.dialogRemove = false
     },
     select(item) {
-      this.$router.push(this.localePath({ name: 'users-id', params: { id: item.id } }))
+      this.current = { ...item }
+      this.dialogEdit = true
     }
   }
 }

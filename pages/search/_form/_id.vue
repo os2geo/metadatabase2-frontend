@@ -204,7 +204,6 @@ export default {
         }
       })
     })
-    console.log(doc)
     return {
       doc
     }

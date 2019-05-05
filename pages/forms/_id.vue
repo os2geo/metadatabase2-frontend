@@ -57,6 +57,9 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer />
+            <v-btn flat color="primary" @click="showCreateCopy()">
+              {{ $t('CreateCopy') }}
+            </v-btn>
             <v-btn flat color="primary" @click="showDialogCreate=true">
               {{ $t('CreateFromData') }}
             </v-btn>
@@ -163,6 +166,38 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="showDialogCreateCopy" max-width="500">
+      <v-form ref="form" @submit.prevent>
+        <v-card>
+          <v-card-title>
+            {{ $t('CreateCopy') }}
+          </v-card-title>
+          <v-card-text>
+            <v-text-field
+              ref="focus"
+              v-model="name"
+              :label="$t('Name')"
+              :rules="requiredRules"
+              required
+            />
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn color="primary" flat @click="showDialogCreate=false">
+              {{ $t('Cancel') }}
+            </v-btn>
+            <v-btn
+              dark
+              type="submit"
+              color="primary"
+              @click="createCopy()"
+            >
+              {{ $t('CreateCopy') }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-form>
+    </v-dialog>
     <v-dialog v-model="showFieldDialog" max-width="500" scrollable>
       <v-card>
         <v-card-title>
@@ -206,6 +241,7 @@
                 prepend-icon="drag_indicator"
                 append-outer-icon="close"
                 @input="fieldValueInput($event, index)"
+                @click:append-outer="removeValue(index)"
               />
             </draggable>
           </div>
@@ -246,9 +282,12 @@ export default {
       drawer: null,
       showFieldDialog: false,
       showDialogCreate: false,
+      showDialogCreateCopy: false,
       currentGroupIndex: null,
       currentFieldIndex: null,
-      headers: []
+      headers: [],
+      name: null,
+      requiredRules: [v => !!v || this.$t('Required')]
     }
   },
   computed: {
@@ -391,13 +430,14 @@ export default {
       this.groups = [...this.groups, { name: null, fields: [] }]
     },
     removeGroup(index) {
-      const groups = [...this.groups]
-      groups.splice(index, 1)
-      this.groups = groups
+      this.groups = this.groups.filter((item, index2) => index !== index2)
     },
     addValue() {
       const values = this.field.values || []
-      this.field = { ...this.field, values: [...values, null] }
+      this.fieldValues = [...values, null]
+    },
+    removeValue(index) {
+      this.fieldValues = this.fieldValues.filter((item, index2) => index !== index2)
     },
     addField(groupIndex) {
       const group = { ...this.groups[groupIndex] }
@@ -413,9 +453,7 @@ export default {
     },
     removeField() {
       this.showFieldDialog = false
-      const fields = [...this.fields]
-      fields.splice(this.currentFieldIndex, 1)
-      this.fields = fields
+      this.fields = this.fields.filter((item, index2) => this.currentFieldIndex !== index2)
       this.currentFieldIndex = null
       this.currentGroupIndex = null
     },
@@ -541,7 +579,6 @@ export default {
     create() {
       this.groups = [{
         fields: this.headers.map((item) => {
-          console.log(item.type)
           return {
             name: item.text,
             column: item.text,
@@ -551,8 +588,19 @@ export default {
       }]
       this.showDialogCreate = false
     },
+    async createCopy() {
+      if (this.$refs.form.validate()) {
+        await this.$store.dispatch('forms/create', {
+          name: this.name,
+          organizationId: this.current.organizationId,
+          databaseId: this.current.databaseId,
+          doc: this.current.doc
+        })
+        this.showDialogCreateCopy = false
+        this.$refs.form.reset()
+      }
+    },
     changeName(value, groupIndex, fieldIndex) {
-      console.log(value)
       this.currentGroupIndex = groupIndex
       this.currentFieldIndex = fieldIndex
       if (typeof value === 'object') {
@@ -563,6 +611,12 @@ export default {
     },
     changeColumn(value) {
       this.fieldType = value.type
+    },
+    showCreateCopy() {
+      this.showDialogCreateCopy = true
+      this.$nextTick(() =>
+        this.$refs.focus.$el.getElementsByTagName('input')[0].focus()
+      )
     }
   }
 }

@@ -9,6 +9,7 @@ export default {
   ColumnName: 'Column name',
   Contact: 'Contact',
   Create: 'Create',
+  CreateCopy: 'Create copy',
   CreateFromData: 'Create from data',
   CreateFromDataText: 'Warning, this overwrite your current configuration! Do you really want to create a new configuration based on the data in the database?',
   Data: 'Data',
@@ -31,6 +32,7 @@ export default {
   GroupName: 'Group name',
   Groups: 'Groups',
   Help: 'Help',
+  Hi: 'Hi',
   Import: 'Import',
   ImportExcel: 'Import Excel',
   Language: 'Language',
@@ -38,6 +40,7 @@ export default {
   Logout: 'Logout',
   LookupValues: 'Lookup values',
   Name: 'Name',
+  NewPassword: 'New password',
   None: 'None',
   Number: 'Number',
   Order: 'Order',
@@ -46,6 +49,7 @@ export default {
   Password: 'Password',
   Projects: 'Projects',
   Required: 'Required',
+  ResetPassword: 'Reset password',
   Role: 'Role',
   Search: 'Search',
   Select: 'Select',
@@ -60,5 +64,6 @@ export default {
   ValidateErrorTitle: 'Data is not saved!',
   ValidateErrorBody: 'Required fields are missing.',
   ValidateSuccessTitle: 'Data is saved',
+  VerifyEmail: 'Verify email',
   WarningImport: 'All data in the database will be delted!'
 }

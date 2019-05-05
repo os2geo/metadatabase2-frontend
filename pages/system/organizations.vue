@@ -19,7 +19,7 @@
                       add
                     </v-icon>
                   </v-btn>
-                  <span>{{ $t('AddOrganization') }}</span>
+                  <span>{{ $t('Add') }}</span>
                 </v-tooltip>
                 <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
                   <v-btn slot="activator" :disabled="selected.length===0" icon @click="dialogRemove=true">
@@ -46,9 +46,9 @@
                       </v-icon>
                     </v-btn>
                     <v-list>
-                      <v-list-tile @click="addUser()">
+                      <v-list-tile @click="showCreate()">
                         <v-list-tile-content>
-                          {{ $t('AddOrganization') }}
+                          {{ $t('Add') }}
                         </v-list-tile-content>
                         <v-list-tile-action>
                           <v-icon>add</v-icon>

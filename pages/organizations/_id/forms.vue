@@ -264,7 +264,11 @@ export default {
       this.dialogRemove = false
     },
     select(item) {
-      this.$router.push(this.localePath({ name: 'forms-id', params: { id: item.id } }))
+      if (this.$store.state.auth.user.roleId === 3) {
+        this.$router.push(this.localePath({ name: 'search-form', params: { form: item.id } }))
+      } else {
+        this.$router.push(this.localePath({ name: 'forms-id', params: { id: item.id } }))
+      }
     }
   }
 }

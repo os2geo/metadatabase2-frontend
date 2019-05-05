@@ -9,6 +9,7 @@ export default {
   ColumnName: 'Kolonnenavn',
   Contact: 'Kontakt',
   Create: 'Opret',
+  CreateCopy: 'Opret kopi',
   CreateFromData: 'Opret fra data',
   CreateFromDataText: 'Advarsel, dette vil overskrive din nuværende konfiguration! Er du sikker på at du vil oprette en ny konfiguration baseret på data i databasen?',
   Data: 'Data',
@@ -31,6 +32,7 @@ export default {
   GroupName: 'Gruppenavn',
   Groups: 'Grupper',
   Help: 'Hjælp',
+  Hi: 'Hej',
   Import: 'Importer',
   ImportExcel: 'Importer Excel',
   Language: 'Sprog',
@@ -38,6 +40,7 @@ export default {
   Logout: 'Log ud',
   LookupValues: 'Opslagsværdier',
   Name: 'Navn',
+  NewPassword: 'Nyt password',
   None: 'Ingen',
   Number: 'Tal',
   Order: 'Rækkefølge',
@@ -46,6 +49,7 @@ export default {
   Password: 'Kodeord',
   Projects: 'Projekter',
   Required: 'Påkrævet',
+  ResetPassword: 'Nulstil password',
   Role: 'Rolle',
   Search: 'Søg',
   Select: 'Vælg',
@@ -60,5 +64,6 @@ export default {
   ValidateErrorTitle: 'Data er ikke gemt!',
   ValidateErrorBody: 'Der mangler at blive udfyldt påkrævede felter.',
   ValidateSuccessTitle: 'Data er gemt',
+  VerifyEmail: 'Verificer email',
   WarningImport: 'Alle eksistrende data i databasen bliver slettet!'
 }

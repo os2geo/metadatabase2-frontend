@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <main-drawer v-model="drawer">
+    <main-drawer v-if="$store.state.auth.payload" v-model="drawer">
       <v-list>
         <v-list-tile
           :to="localePath({ name: 'organizations-id', params: $route.params })"
@@ -20,10 +20,10 @@
             {{ avatar }}
           </v-list-tile-content>
         </v-list-tile>
-        <v-list-tile :to="localePath({ name: 'organizations-id-users', params: { id: current.organizationId } })" active-class="primary white--text" nuxt>
+        <v-list-tile v-if="isAdmin" :to="localePath({ name: 'organizations-id-users', params: { id: current.organizationId } })" active-class="primary white--text" nuxt>
           <v-list-tile-title>{{ $t('Users') }}</v-list-tile-title>
         </v-list-tile>
-        <v-list-tile :to="localePath({ name: 'organizations-id-databases', params: { id: current.organizationId } })" active-class="primary white--text" nuxt>
+        <v-list-tile v-if="isAdmin" :to="localePath({ name: 'organizations-id-databases', params: { id: current.organizationId } })" active-class="primary white--text" nuxt>
           <v-list-tile-title>{{ $t('Databases') }}</v-list-tile-title>
         </v-list-tile>
         <v-list-group :value="true">
@@ -32,7 +32,7 @@
               <v-list-tile-title>{{ $t('Forms') }}</v-list-tile-title>
             </v-list-tile>
           </template>
-          <v-list-tile :to="localePath({ name: 'forms-id', params: { id: current.id} })" active-class="primary white--text" nuxt>
+          <v-list-tile :to="localePath({ name: 'search-form', params: { form: current.id } })" active-class="primary white--text" nuxt>
             <v-list-tile-title>{{ $store.state.forms.current.name }}</v-list-tile-title>
           </v-list-tile>
         </v-list-group>
@@ -522,6 +522,9 @@ export default {
     }
   },
   computed: {
+    isAdmin() {
+      return this.$store.state.auth.user.roleId < 3
+    },
     ...mapGetters('forms', ['current']),
     form() {
       return this.current.doc
@@ -615,10 +618,8 @@ export default {
 
     const service = client.service(`es/${this.$store.state.forms.current.databaseId}`)
     service.on('created', (item) => {
-      console.log('created', item)
     })
     service.on('updated', (item) => {
-      console.log('updated', item)
       const index = this.data.findIndex((doc) => {
         return doc._id === item._id
       })
@@ -627,7 +628,6 @@ export default {
       }
     })
     service.on('patched', (item) => {
-      console.log('patched', item)
       const index = this.data.findIndex((doc) => {
         return doc._id === item._id
       })
@@ -636,7 +636,6 @@ export default {
       }
     })
     service.on('removed', (item) => {
-      console.log('removed', item)
     })
   },
 
@@ -771,13 +770,11 @@ export default {
           }
         }
       })
-      console.log(this.query, this.sorting)
       if (this.sorting.name) {
         const header = this.headers.find((item) => {
           return item.value === this.sorting.name
         })
         if (header) {
-          console.log(header)
           this.query.$sort = { [['radio', 'select', 'text', 'textarea'].indexOf(header.type) !== -1 ? `${header.value}.keyword` : header.value]: this.sorting.descending ? -1 : 1 }
         }
       }

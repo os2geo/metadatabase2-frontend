@@ -32,7 +32,7 @@ export default function createService(namespace, options = {}) {
         }
         const index = state.list.findIndex(element => element.id === item.id)
         if (index !== -1) {
-          state.list.slice(index, 1, item)
+          state.list.splice(index, 1, item)
         }
       },
       removeItem(state, id) {

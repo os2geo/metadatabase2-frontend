@@ -6,7 +6,7 @@
     dark
     color="primary darken-2"
   >
-    <v-toolbar-side-icon @click.stop="drawer = !drawer" />
+    <v-toolbar-side-icon v-if="$store.state.auth.payload" @click.stop="drawer = !drawer" />
     <v-toolbar-title>{{ $t(title) }}</v-toolbar-title>
     <v-spacer />
     <v-menu left offset-y>
@@ -16,7 +16,7 @@
         </span>
       </v-avatar>
       <v-list>
-        <v-list-tile :to="localePath({ name: 'users-id', params: { id: userId } })" nuxt>
+        <v-list-tile>
           {{ userName }}
         </v-list-tile>
         <v-divider />
@@ -32,7 +32,7 @@
         <v-divider />
         <v-list-tile
           v-if="$store.state.auth.payload"
-          @click="$router.replace(localePath({ name: 'logout' }))"
+          @click="logout"
         >
           {{ $t('Logout') }}
         </v-list-tile>
@@ -88,6 +88,10 @@ export default {
         maxAge: 60 * 60 * 24
       })
       this.$router.replace(this.localePath({ name: 'login' }))
+    },
+    async logout() {
+      await this.$store.dispatch('auth/logout')
+      this.$router.replace(this.localePath({ name: 'index' }))
     }
   }
 }

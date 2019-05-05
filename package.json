@@ -10,7 +10,9 @@
     "start": "nuxt start",
     "generate": "nuxt generate",
     "lint": "eslint --ext .js,.vue --ignore-path .gitignore .",
-    "precommit": "npm run lint"
+    "precommit": "npm run lint",
+    "docker": "docker build -t runetvilum/metadatabase2-frontend . && docker push runetvilum/metadatabase2-frontend",
+    "k8s": "kubectl apply -f k8s.yaml"
   },
   "dependencies": {
     "@feathersjs/authentication-client": "^1.0.11",

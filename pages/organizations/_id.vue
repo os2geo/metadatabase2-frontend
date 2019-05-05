@@ -20,10 +20,15 @@
             {{ header }}
           </v-list-tile-content>
         </v-list-tile>
-        <v-list-tile :to="localePath({ name: 'organizations-id-users', params: $route.params })" active-class="primary white--text" nuxt>
+        <v-list-tile
+          v-if="isAdmin"
+          :to="localePath({ name: 'organizations-id-users', params: $route.params })"
+          active-class="primary white--text"
+          nuxt
+        >
           <v-list-tile-title>{{ $t('Users') }}</v-list-tile-title>
         </v-list-tile>
-        <v-list-tile :to="localePath({ name: 'organizations-id-databases', params: $route.params })" active-class="primary white--text" nuxt>
+        <v-list-tile v-if="isAdmin" :to="localePath({ name: 'organizations-id-databases', params: $route.params })" active-class="primary white--text" nuxt>
           <v-list-tile-title>{{ $t('Databases') }}</v-list-tile-title>
         </v-list-tile>
         <v-list-tile :to="localePath({ name: 'organizations-id-forms', params: $route.params })" active-class="primary white--text" nuxt>
@@ -59,6 +64,9 @@ export default {
     },
     header() {
       return this.$store.state.organizations.current.name
+    },
+    isAdmin() {
+      return this.$store.state.auth.user.roleId < 3
     }
   }
 }

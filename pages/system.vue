@@ -23,9 +23,6 @@
         <v-list-tile :to="localePath({ name: 'system-organizations', params: $route.params })" active-class="primary white--text" nuxt>
           <v-list-tile-title>{{ $t('Organizations') }}</v-list-tile-title>
         </v-list-tile>
-        <v-list-tile :to="localePath({ name: 'system-users', params: $route.params })" active-class="primary white--text" nuxt>
-          <v-list-tile-title>{{ $t('Users') }}</v-list-tile-title>
-        </v-list-tile>
         <v-list-tile :to="localePath({ name: 'system-roles', params: $route.params })" active-class="primary white--text" nuxt>
           <v-list-tile-title>{{ $t('Roles') }}</v-list-tile-title>
         </v-list-tile>

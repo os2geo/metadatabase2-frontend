@@ -184,13 +184,17 @@ export default {
     },
     ...mapState('roles', {
       roles(state) {
-        return state.list.roles
+        return state.list
       }
     })
   },
   async fetch({ store, params }) {
     service('roles')(store)
-    await store.dispatch('roles/find')
+    await store.dispatch('roles/find', {
+      query: {
+        $limit: -1
+      }
+    })
     store.commit('title', 'Roles')
   },
   created() {

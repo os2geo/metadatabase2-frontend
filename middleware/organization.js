@@ -5,6 +5,5 @@ export default async ({ store, redirect, error, app, route }) => {
   }
   service('organizations')(store)
   const organization = await store.dispatch('organizations/get', route.params.id)
-  console.log(organization)
   store.commit('title', organization.name)
 }

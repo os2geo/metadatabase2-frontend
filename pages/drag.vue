@@ -197,7 +197,6 @@ export default {
       this.currentGroupIndex = null
     },
     dragStartGroup(e, group) {
-      console.log('dragStart')
       e.dataTransfer.setData('group', JSON.stringify(group))
       // e.dropEffect = 'move'
     },
@@ -220,8 +219,7 @@ export default {
       */
     },
     dropGroup(e, group, index) {
-      const source = e.dataTransfer.getData('group')
-      console.log(source)
+      // const source = e.dataTransfer.getData('group')
     }
   }
 }
