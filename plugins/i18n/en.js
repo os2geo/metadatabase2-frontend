@@ -3,6 +3,7 @@ export default {
   Ascending: 'Ascending',
   AssociateDatabase: 'Associate database',
   Add: 'Add',
+  AutoGenerate: 'Auto generate from database',
   Cancel: 'Cancel',
   ChooseFile: 'Choose file',
   Close: 'Close',

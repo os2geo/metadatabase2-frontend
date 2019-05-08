@@ -280,6 +280,7 @@
               {{ $t('WarningImport') }}
             </v-alert>
           </v-card-text>
+          <v-progress-linear :indeterminate="progress" />
           <v-card-actions>
             <v-spacer />
             <v-btn color="primary" flat @click="dialogImport=false">
@@ -337,7 +338,8 @@ export default {
       headers: [],
       data: [],
       pagination: {},
-      drawer: null
+      drawer: null,
+      progress: false
     }
   },
   computed: {
@@ -458,39 +460,41 @@ export default {
       XLSX.writeFile(wb, `${this.$route.params.id}.xlsx`)
     },
     async importExcel() {
-      if (this.$refs.importForm.validate()) {
-        const serviceIndices = client.service('indices')
-        await serviceIndices.remove(this.$route.params.id)
-        await serviceIndices.create({ id: this.$route.params.id })
-        const json = XLSX.utils.sheet_to_json(this.$options.workbook.Sheets[this.sheet])
-        const json2 = json.map((item) => {
-          if (item.hasOwnProperty('_rev')) {
-            const { _rev, ...doc } = item
-            return doc
-          }
-          return item
-        })
-
-        const service = client.service(`es/${this.$route.params.id}`)
-        this.data = await service.create(json2)
-        const res = await client.service('indices').get(this.$route.params.id)
-        if (res.hasOwnProperty(this.$route.params.id) && res[this.$route.params.id].hasOwnProperty('mappings') && res[this.$route.params.id].mappings.hasOwnProperty('docs') && res[this.$route.params.id].mappings.docs.hasOwnProperty('properties')) {
-          this.headers = Object.keys(res[this.$route.params.id].mappings.docs.properties).map((key) => {
-            const header = res[this.$route.params.id].mappings.docs.properties[key]
-            return {
-              align: 'left',
-              text: key,
-              value: key,
-              visible: true,
-              type: header.type,
-              filter: null,
-              menu: false,
-              sortable: false,
-              width: 200
+      try {
+        if (this.$refs.importForm.validate()) {
+          this.progress = true
+          const serviceIndices = client.service('indices')
+          await serviceIndices.remove(this.$route.params.id)
+          await serviceIndices.create({ id: this.$route.params.id })
+          const json = XLSX.utils.sheet_to_json(this.$options.workbook.Sheets[this.sheet])
+          const json2 = json.map((item) => {
+            if (item.hasOwnProperty('_rev')) {
+              const { _rev, ...doc } = item
+              return doc
             }
+            return item
           })
-        }
-        /*
+
+          const service = client.service(`es/${this.$route.params.id}`)
+          this.data = await service.create(json2)
+          const res = await client.service('indices').get(this.$route.params.id)
+          if (res.hasOwnProperty(this.$route.params.id) && res[this.$route.params.id].hasOwnProperty('mappings') && res[this.$route.params.id].mappings.hasOwnProperty('docs') && res[this.$route.params.id].mappings.docs.hasOwnProperty('properties')) {
+            this.headers = Object.keys(res[this.$route.params.id].mappings.docs.properties).map((key) => {
+              const header = res[this.$route.params.id].mappings.docs.properties[key]
+              return {
+                align: 'left',
+                text: key,
+                value: key,
+                visible: true,
+                type: header.type,
+                filter: null,
+                menu: false,
+                sortable: false,
+                width: 200
+              }
+            })
+          }
+          /*
         let current = 0
         for (const doc of json2) {
           current++
@@ -498,6 +502,11 @@ export default {
           this.progress = 100 * current / json2.length
         }
         */
+        }
+      } catch (err) {
+        console.log(err)
+      } finally {
+        this.progress = false
         this.dialogImport = false
         this.$refs.importForm.reset()
       }
@@ -595,7 +604,7 @@ export default {
           this.query[key] = item.filter
         } else if (value !== null && value !== '') {
           this.query[key] = {
-            $wildcard: `${value}*`
+            $wildcard: `${value.toLowerCase()}*`
           }
         }
       })

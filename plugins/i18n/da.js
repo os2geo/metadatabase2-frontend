@@ -3,6 +3,7 @@ export default {
   Ascending: 'Stigende',
   AssociateDatabase: 'Tilknyt database',
   Add: 'Tilføj',
+  AutoGenerate: 'Automatisk generering fra database',
   Cancel: 'Fortryd',
   ChooseFile: 'Vælg fil',
   Close: 'Luk',

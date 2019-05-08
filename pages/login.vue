@@ -74,6 +74,8 @@
 </template>
 <script>
 import { mapActions } from 'vuex'
+import client from '~/plugins/feathers-client'
+const service = client.service('authManagement')
 export default {
   i18n: {
     messages: {
@@ -137,25 +139,19 @@ export default {
         throw e
       }
     },
-    sendResetPwd() {
-      const { email } = this
-      this.$store
-        .dispatch('authManagement/create', {
+    async sendResetPwd() {
+      try {
+        const { email } = this
+        await service.create({
           action: 'sendResetPwd',
           value: { email }
         })
-        .then((message) => {
-          console.log(message)
-        })
-        .catch((err) => {
-          console.log('error', err)
-          if (err.type && err.type === 'FeathersError') {
-            this.message = err.message
-          } else {
-            this.message = 'Der er sendt en email til dig!'
-          }
-          this.snackbar = true
-        })
+        this.message = 'Der er sendt en email til dig!'
+      } catch (err) {
+        this.message = err
+      } finally {
+        this.snackbar = true
+      }
     }
   }
 }

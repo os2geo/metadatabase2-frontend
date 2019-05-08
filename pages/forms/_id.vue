@@ -183,7 +183,7 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer />
-            <v-btn color="primary" flat @click="showDialogCreate=false">
+            <v-btn color="primary" flat @click="showDialogCreateCopy=false">
               {{ $t('Cancel') }}
             </v-btn>
             <v-btn
@@ -200,7 +200,7 @@
     </v-dialog>
     <v-dialog v-model="showFieldDialog" max-width="500" scrollable>
       <v-card>
-        <v-card-title>
+        <v-card-title class="title">
           {{ fieldName }}
         </v-card-title>
         <v-divider />
@@ -229,9 +229,22 @@
                 {{ $t('LookupValues') }}
               </v-toolbar-title>
               <v-spacer />
-              <v-btn icon @click.stop="addValue()">
-                <v-icon>add</v-icon>
-              </v-btn>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on }">
+                  <v-btn icon @click.stop="getDistinct(fieldColumn)" v-on="on">
+                    <v-icon>autorenew</v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('AutoGenerate') }}</span>
+              </v-tooltip>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on }">
+                  <v-btn icon @click.stop="addValue()" v-on="on">
+                    <v-icon>add</v-icon>
+                  </v-btn>
+                </template>
+                <span>{{ $t('Add') }}</span>
+              </v-tooltip>
             </v-toolbar>
             <draggable v-model="fieldValues">
               <v-text-field
@@ -378,7 +391,11 @@ export default {
         return this.field.type
       },
       set(type) {
-        this.field = { ...this.field, type }
+        if (['radio', 'select'].indexOf(type) === -1) {
+          this.field = { ...this.field, type, values: null }
+        } else {
+          this.field = { ...this.field, type }
+        }
       }
     },
     fieldIsRequired: {
@@ -617,6 +634,24 @@ export default {
       this.$nextTick(() =>
         this.$refs.focus.$el.getElementsByTagName('input')[0].focus()
       )
+    },
+    async getDistinct(value) {
+      const id = this.current.databaseId
+      let res = await client.service('indices').get(id)
+      if (res.hasOwnProperty(id) && res[id].hasOwnProperty('mappings') && res[id].mappings.hasOwnProperty('docs') && res[id].mappings.docs.hasOwnProperty('properties') && res[id].mappings.docs.properties.hasOwnProperty(this.fieldColumn)) {
+        const field = res[id].mappings.docs.properties[this.fieldColumn]
+
+        res = await client.service(`es/${id}`).find({
+          query: {
+            $distinct: `${this.fieldColumn}${field.hasOwnProperty('fields') && field.fields.hasOwnProperty('keyword') ? '.keyword' : ''}`
+          }
+        })
+        if (res.hasOwnProperty('aggregations')) {
+          this.fieldValues = res.aggregations.values.buckets.map((item) => {
+            return item.key
+          })
+        }
+      }
     }
   }
 }
