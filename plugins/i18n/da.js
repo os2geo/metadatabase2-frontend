@@ -34,6 +34,9 @@ export default {
   Groups: 'Grupper',
   Help: 'Hjælp',
   Hi: 'Hej',
+  Hidden: 'Skjult',
+  HintIsHidden: 'Kolonne kan ikke til/fra vælges',
+  HintIsVisible: 'Kolonne er synlig fra start',
   Import: 'Importer',
   ImportExcel: 'Importer Excel',
   Language: 'Sprog',
@@ -66,5 +69,6 @@ export default {
   ValidateErrorBody: 'Der mangler at blive udfyldt påkrævede felter.',
   ValidateSuccessTitle: 'Data er gemt',
   VerifyEmail: 'Verificer email',
+  Visible: 'Synlig',
   WarningImport: 'Alle eksistrende data i databasen bliver slettet!'
 }

@@ -34,6 +34,9 @@ export default {
   Groups: 'Groups',
   Help: 'Help',
   Hi: 'Hi',
+  Hidden: 'Hidden',
+  HintIsHidden: 'Column can not be selected/deselected',
+  HintIsVisible: 'Column is visible from start',
   Import: 'Import',
   ImportExcel: 'Import Excel',
   Language: 'Language',
@@ -66,5 +69,6 @@ export default {
   ValidateErrorBody: 'Required fields are missing.',
   ValidateSuccessTitle: 'Data is saved',
   VerifyEmail: 'Verify email',
+  Visible: 'Visible',
   WarningImport: 'All data in the database will be delted!'
 }

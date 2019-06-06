@@ -13,18 +13,28 @@
           <h1 :class="$vuetify.breakpoint.smAndUp ? 'display-4' : 'display-2'" class="font-weight-bold mb-3">
             METADATABASE
           </h1>
-          <h2 class="display-1 font-weight-medium">
+          <h2 class="display-1 font-weight-medium mb-5">
             Et open-source projekt udviklet under OS2geo gruppen
           </h2>
+          <v-btn
+            :to="localePath(route)"
+            nuxt
+            large
+            round
+            color="accent"
+          >
+            Kom i gang
+          </v-btn>
         </v-layout>
       </v-parallax>
-      <v-sheet height="400px" color="primary">
+      <v-sheet height="300px" color="primary">
         <v-container fill-height>
           <v-layout align-center>
             <v-flex>
               <p class="display-1">
                 Her er det muligt at administrere og søge informationer, der beskriver geodatasæt og geodatatjenester
               </p>
+              <!--
               <v-layout column align-center pa-4>
                 <v-btn
                   :to="localePath(route)"
@@ -36,6 +46,7 @@
                   Kom i gang
                 </v-btn>
               </v-layout>
+              -->
             </v-flex>
           </v-layout>
         </v-container>

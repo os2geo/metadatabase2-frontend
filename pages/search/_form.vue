@@ -85,14 +85,14 @@
                         </v-icon>
                       </v-btn>
                       <v-list dense>
-                        <template v-for="(header, index) in headers">
+                        <template v-for="(header, index) in headersNotHidden">
                           <v-list-tile :key="`Header-${index}`">
                             <v-list-tile-action>
                               <v-checkbox v-model="header.visible" />
                             </v-list-tile-action>
                             <v-list-tile-title>{{ header.text }}</v-list-tile-title>
                           </v-list-tile>
-                          <v-divider v-if="index < headers.length" :key="`Divider-${index}`" />
+                          <v-divider v-if="index < headersNotHidden.length" :key="`Divider-${index}`" />
                         </template>
                       </v-list>
                     </v-menu>
@@ -229,6 +229,15 @@
                   <v-container fluid fill-height pa-0>
                     <v-layout column ma-0>
                       <v-toolbar card dense color="accent" dark>
+                        <v-btn
+                          icon
+                          nuxt
+                          :to="localePath({ name: 'data-form-id', params: { form: $route.params.form, id: $route.params.id } })"
+                        >
+                          <v-icon>
+                            launch
+                          </v-icon>
+                        </v-btn>
                         <v-spacer />
                         <v-btn
                           icon
@@ -508,7 +517,6 @@ export default {
       sheet: null,
       filename: null,
       search: null,
-      query: {},
       headers: [],
       data: [],
       pagination: {},
@@ -522,6 +530,11 @@ export default {
     }
   },
   computed: {
+    headersNotHidden() {
+      return this.headers.filter((item) => {
+        return !item.isHidden
+      })
+    },
     isAdmin() {
       return this.$store.state.auth.user.roleId < 3
     },
@@ -584,15 +597,17 @@ export default {
 
   async asyncData({ store, params }) {
     const headers = []
+    const query = {}
     store.state.forms.current.doc.groups.forEach((group) => {
       group.fields.forEach((field) => {
         headers.push({
           align: 'left',
           text: field.name,
           value: field.column,
-          visible: true,
+          visible: field.isVisible,
+          isHidden: field.isHidden,
           type: field.type,
-          filter: null,
+          filter: field.filter,
           menu: false,
           sortable: false,
           lookup: field.values,
@@ -600,11 +615,38 @@ export default {
         })
       })
     })
+    headers.forEach((item) => {
+      const key = item.value
+      const value = typeof item.filter !== 'undefined' ? item.filter : null
+      if (item.lookup) {
+        if (value !== null && value.length !== 0) {
+          query[`${key}.keyword`] = {
+            $in: value
+          }
+        }
+      } else if ((item.type === 'date' || item.type === 'time') && value !== null) {
+        if (item.filter.from) {
+          query[key] = { ...query[key], ...{ $gte: item.filter.from } }
+        }
+        if (item.filter.to) {
+          query[key] = { ...query[key], ...{ $lte: item.filter.to } }
+        }
+      } else if (item.type === 'number' && value !== null) {
+        query[key] = item.filter
+      } else if (item.type === 'boolean' && value !== null) {
+        query[key] = item.filter
+      } else if (value !== null && value !== '') {
+        query[key] = {
+          $wildcard: `${value}*`
+        }
+      }
+    })
     const service = client.service(`es/${store.state.forms.current.databaseId}`)
-    const res = await service.find()
+    const res = await service.find({ query })
     const { data, ...pagination } = res
     return {
       headers,
+      query,
       data,
       pagination
     }

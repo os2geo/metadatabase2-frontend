@@ -34,6 +34,8 @@ export default {
   */
   css: [
     '@fortawesome/fontawesome-free/css/all.css',
+    'material-design-icons-iconfont/dist/material-design-icons.css',
+    'typeface-roboto',
     '~/assets/style/app.styl'
   ],
 
@@ -72,14 +74,16 @@ export default {
         vueI18n
       }
     ],
-    'cookie-universal-nuxt',
-    'nuxt-webfontloader'
+    'cookie-universal-nuxt' // ,
+    // 'nuxt-webfontloader'
   ],
+  /*
   webfontloader: {
     google: {
       families: ['Roboto:300,400,500,700', 'Material+Icons']
     }
   },
+  */
   /*
   ** Axios module configuration
   */

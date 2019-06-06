@@ -206,6 +206,18 @@
         <v-divider />
         <v-card-text>
           <v-checkbox
+            v-model="fieldIsVisible"
+            :label="$t('Visible')"
+            :hint="$t('HintIsVisible')"
+            persistent-hint
+          />
+          <v-checkbox
+            v-model="fieldIsHidden"
+            :label="$t('Hidden')"
+            :hint="$t('HintIsHidden')"
+            persistent-hint
+          />
+          <v-checkbox
             v-model="fieldIsRequired"
             :label="$t('Required')"
           />
@@ -258,6 +270,127 @@
               />
             </draggable>
           </div>
+          <v-toolbar card dense>
+            <v-toolbar-title>
+              {{ $t('Filter') }}
+            </v-toolbar-title>
+          </v-toolbar>
+          <v-autocomplete
+            v-if="['radio','select'].indexOf(fieldType) !==-1"
+            v-model="fieldFilter"
+            :label="$t('Select')"
+            :items="fieldValues"
+            clearable
+            multiple
+            menu-props="closeOnContentClick"
+          />
+          <v-select
+            v-if="fieldType === 'boolean'"
+            v-model="fieldFilter"
+            :label="$t('Select')"
+            :items="[{ text: $t('True'), value: true }, { text: $t('False'), value: false }]"
+            clearable
+          />
+          <v-text-field
+            v-if="['text','textarea'].indexOf(fieldType) !== -1"
+            v-model="fieldFilter"
+            :label="$t('Text')"
+            clearable
+          />
+          <v-text-field
+            v-if="fieldType === 'number'"
+            v-model.number="fieldFilter"
+            :label="$t('Number')"
+            clearable
+          />
+          <v-menu
+            v-if="fieldType === 'time'"
+            ref="menuFrom"
+            v-model="menuFrom"
+            :close-on-content-click="false"
+            :return-value.sync="fieldFilterFrom"
+            full-width
+            max-width="290"
+          >
+            <v-text-field
+              slot="activator"
+              v-model="fieldFilterFrom"
+              clearable
+              :label="$t('FromTime')"
+              readonly
+            />
+            <v-time-picker
+              v-if="menuFrom"
+              v-model="fieldFilterFrom"
+              full-width
+              @click:minute="$refs.menuFrom.save(fieldFilterFrom)"
+            />
+          </v-menu>
+          <v-menu
+            v-if="fieldType === 'time'"
+            ref="menuTo"
+            v-model="menuTo"
+            :close-on-content-click="false"
+            :return-value.sync="fieldFilterTo"
+            full-width
+            max-width="290"
+          >
+            <v-text-field
+              slot="activator"
+              v-model="fieldFilterTo"
+              clearable
+              :label="$t('ToTime')"
+              readonly
+            />
+            <v-time-picker
+              v-if="menuTo"
+              v-model="fieldFilterTo"
+              full-width
+              @click:minute="$refs.menuTo.save(fieldFilterTo)"
+            />
+          </v-menu>
+          <v-menu
+            v-if="['date', 'timestamp'].indexOf(fieldType) !== -1"
+            v-model="menuFrom"
+            :close-on-content-click="false"
+            full-width
+            max-width="290"
+          >
+            <v-text-field
+              slot="activator"
+              v-model="fieldFilterFrom"
+              clearable
+              :label="$t('FromDate')"
+              readonly
+            />
+            <v-date-picker
+              v-model="fieldFilterFrom"
+              no-title
+              locale="da-DK"
+              @change="menuFrom = false"
+            />
+          </v-menu>
+          <v-menu
+            v-if="['date', 'timestamp'].indexOf(fieldType) !== -1"
+            v-model="menuTo"
+            :close-on-content-click="false"
+            full-width
+            max-width="290"
+          >
+            <v-text-field
+              slot="activator"
+              v-model="fieldFilterTo"
+              clearable
+              :label="$t('ToDate')"
+              readonly
+            />
+            <v-date-picker
+              v-model="fieldFilterTo"
+              no-title
+              locale="da-DK"
+              @change="menuTo = false"
+            />
+          </v-menu>
         </v-card-text>
         <v-divider />
         <v-card-actions>
@@ -292,6 +425,9 @@ export default {
   },
   data() {
     return {
+      menu: false,
+      menuFrom: null,
+      menuTo: null,
       drawer: null,
       showFieldDialog: false,
       showDialogCreate: false,
@@ -398,6 +534,22 @@ export default {
         }
       }
     },
+    fieldIsHidden: {
+      get() {
+        return this.field.isHidden
+      },
+      set(isHidden) {
+        this.field = { ...this.field, isHidden }
+      }
+    },
+    fieldIsVisible: {
+      get() {
+        return this.field.isVisible
+      },
+      set(isVisible) {
+        this.field = { ...this.field, isVisible }
+      }
+    },
     fieldIsRequired: {
       get() {
         return this.field.isRequired
@@ -412,6 +564,40 @@ export default {
       },
       set(values) {
         this.field = { ...this.field, values }
+      }
+    },
+    fieldFilter: {
+      get() {
+        return this.field.filter
+      },
+      set(filter) {
+        this.field = { ...this.field, filter }
+      }
+    },
+    fieldFilterFrom: {
+      get() {
+        return (this.field.filter && this.field.filter.from) || null
+      },
+      set(value) {
+        if (value) {
+          this.fieldFilter = { ...this.fieldFilter, ...{ from: value } }
+        } else if (this.fieldFilter.hasOwnProperty('from')) {
+          const { from, ...filter } = this.fieldFilter
+          this.fieldFilter = Object.keys(filter).length > 0 ? filter : null
+        }
+      }
+    },
+    fieldFilterTo: {
+      get() {
+        return (this.field.filter && this.field.filter.to) || null
+      },
+      set(value) {
+        if (value) {
+          this.fieldFilter = { ...this.fieldFilter, ...{ to: value } }
+        } else if (this.fieldFilter.hasOwnProperty('to')) {
+          const { to, ...filter } = this.fieldFilter
+          this.fieldFilter = Object.keys(filter).length > 0 ? filter : null
+        }
       }
     }
   },
@@ -458,7 +644,7 @@ export default {
     },
     addField(groupIndex) {
       const group = { ...this.groups[groupIndex] }
-      const fields = [ ...group.fields, { name: null, column: null, type: 'text', required: false, values: [] } ]
+      const fields = [ ...group.fields, { name: null, column: null, type: 'text', isVisible: true, required: false, values: [] } ]
       const groups = [...this.groups]
       groups.splice(groupIndex, 1, { ...group, fields })
       this.groups = groups
