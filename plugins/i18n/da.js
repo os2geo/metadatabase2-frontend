@@ -40,6 +40,7 @@ export default {
   Import: 'Importer',
   ImportExcel: 'Importer Excel',
   Language: 'Sprog',
+  Locked: 'Låst',
   Login: 'Log ind',
   Logout: 'Log ud',
   LookupValues: 'Opslagsværdier',

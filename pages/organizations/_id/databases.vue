@@ -106,6 +106,11 @@
               <td class="text-xs-left select" @click.stop="select(props.item)">
                 {{ props.item.updatedAt | date }}
               </td>
+              <td class="text-xs-left select" @click.stop="select(props.item)">
+                <v-icon :color="props.item.isLocked && 'accent'">
+                  {{ props.item.isLocked ? 'lock':'lock_open' }}
+                </v-icon>
+              </td>
             </template>
           </v-data-table>
         </v-flex>
@@ -179,7 +184,8 @@ export default {
     headers() {
       return [
         { text: this.$t('Name'), align: 'left', sortable: true, value: 'name' },
-        { text: this.$t('UpdatedAt'), sortable: true, value: 'updatedAt' }
+        { text: this.$t('UpdatedAt'), sortable: true, value: 'updatedAt' },
+        { text: this.$t('Locked'), align: 'left', sortable: true, value: 'isLocked' }
       ]
     },
     ...mapState('databases', {

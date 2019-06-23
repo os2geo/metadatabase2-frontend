@@ -12,7 +12,7 @@
           d-flex
         >
           <v-card>
-            <v-toolbar color="accent lighten-3" dense card>
+            <v-toolbar :color="`${$store.state.databases.current.isLocked ? 'red' : 'accent'} lighten-3`" dense card>
               <v-toolbar-title>
                 {{ groupItem.name }}
               </v-toolbar-title>
@@ -28,7 +28,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="$store.state.auth.payload===null"
+                    :readonly="readonly"
                     @input="change($event, fieldItem)"
                   />
                   <v-text-field
@@ -37,7 +37,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="$store.state.auth.payload===null"
+                    :readonly="readonly"
                     type="url"
                     append-outer-icon="launch"
                     @click:append-outer="openLink(fieldItem)"
@@ -49,7 +49,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="$store.state.auth.payload===null"
+                    :readonly="readonly"
                     @input="change($event, fieldItem)"
                   />
                   <v-text-field
@@ -65,7 +65,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="$store.state.auth.payload===null"
+                    :readonly="readonly"
                     @change="change($event, fieldItem)"
                   />
                   <v-checkbox
@@ -74,7 +74,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="$store.state.auth.payload===null"
+                    :readonly="readonly"
                     @change="change($event, fieldItem)"
                   />
                   <v-menu
@@ -101,7 +101,7 @@
                     <v-date-picker
                       v-model="doc[fieldItem.column]"
                       :locale="locale"
-                      :readonly="$store.state.auth.payload===null"
+                      :readonly="readonly"
                       no-title
                       @input="menus[fieldIndex] = false"
                       @change="change($event, fieldItem)"
@@ -114,7 +114,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="$store.state.auth.payload===null"
+                    :readonly="readonly"
                     @change="change($event, fieldItem)"
                   >
                     <v-radio
@@ -170,7 +170,8 @@ export default {
       color: null,
       snackbarTitle: null,
       snackbarBody: null,
-      snackbar: false
+      snackbar: false,
+      doc: {}
     }
   },
   computed: {
@@ -193,6 +194,9 @@ export default {
         return 'md4 lg3'
       }
       return ''
+    },
+    readonly() {
+      return this.$store.state.auth.payload === null || this.$store.state.databases.current.isLocked
     }
   },
   async asyncData({ store, params }) {

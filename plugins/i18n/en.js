@@ -40,6 +40,7 @@ export default {
   Import: 'Import',
   ImportExcel: 'Import Excel',
   Language: 'Language',
+  Locked: 'Locked',
   Login: 'Login',
   Logout: 'Logout',
   LookupValues: 'Lookup values',

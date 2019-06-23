@@ -41,33 +41,56 @@
     <main-toolbar v-model="drawer" />
     <v-content>
       <v-container fluid grid-list-md>
-        <v-card>
-          <v-card-text>
-            <v-text-field
-              v-model="formName"
-              :label="$t('Name')"
-            />
-            <v-autocomplete
-              v-model="databaseId"
-              :items="databases"
-              item-text="name"
-              item-value="id"
-              :label="$t('Database')"
-            />
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn flat color="primary" @click="showCreateCopy()">
-              {{ $t('CreateCopy') }}
-            </v-btn>
-            <v-btn flat color="primary" @click="showDialogCreate=true">
-              {{ $t('CreateFromData') }}
-            </v-btn>
-            <v-btn flat color="primary" nuxt :to="localePath({ name: 'search-form', params: { form: $route.params.id }})">
-              {{ $t('Show') }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
+        <v-layout row wrap>
+          <v-flex xs12 sm6>
+            <v-card>
+              <v-card-text>
+                <v-text-field
+                  v-model="formName"
+                  :label="$t('Name')"
+                />
+                <v-autocomplete
+                  v-model="databaseId"
+                  :items="databases"
+                  item-text="name"
+                  item-value="id"
+                  :label="$t('Database')"
+                />
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer />
+                <v-btn flat color="primary" @click="showCreateCopy()">
+                  {{ $t('CreateCopy') }}
+                </v-btn>
+                <v-btn flat color="primary" @click="showDialogCreate=true">
+                  {{ $t('CreateFromData') }}
+                </v-btn>
+                <v-btn flat color="primary" nuxt :to="localePath({ name: 'search-form', params: { form: $route.params.id }})">
+                  {{ $t('Show') }}
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-flex>
+          <v-flex xs12 sm6>
+            <v-card>
+              <v-card-title>
+                {{ $t('Filter') }}
+              </v-card-title>
+              <v-list>
+                <v-list-tile v-for="(item, index) in filteredItems" :key="index">
+                  <v-list-tile-content>
+                    {{ item.field.name }}
+                  </v-list-tile-content>
+                  <v-list-tile-action>
+                    <v-btn icon @click="editField(item.groupIndex, item.fieldIndex)">
+                      <v-icon>edit</v-icon>
+                    </v-btn>
+                  </v-list-tile-action>
+                </v-list-tile>
+              </v-list>
+            </v-card>
+          </v-flex>
+        </v-layout>
         <h2 class="title primary--text my-2">
           {{ $t('Groups') }}
         </h2>
@@ -115,7 +138,7 @@
                       :value="fieldItem.name"
                       :items="headers"
                       :error-messages="fieldItem.isRequired ? [$t('Required')] : []"
-                      prepend-icon="drag_indicator"
+                      :prepend-icon="fieldItem.isVisible ? 'drag_indicator':'visibility_off'"
                       append-outer-icon="edit"
                       @click:append-outer="editField(groupIndex, fieldIndex)"
                       @change="changeName($event, groupIndex, fieldIndex)"
@@ -469,6 +492,35 @@ export default {
       set(databaseId) {
         this.$store.dispatch('forms/patch', [this.$route.params.id, { databaseId }])
       }
+    },
+    filteredItems() {
+      const reducer = (accumulator, currentValue, currentIndex, sourceArray) => {
+        return [
+          ...accumulator,
+          ...currentValue.fields.map((item, index) => {
+            return {
+              groupIndex: currentIndex,
+              fieldIndex: index,
+              field: item
+            }
+          }).filter((item) => {
+            if (!item.field.hasOwnProperty('filter')) {
+              return false
+            }
+            if (item.field.filter === null) {
+              return false
+            }
+            if (Array.isArray(item.field.filter) && item.field.filter.length === 0) {
+              return false
+            }
+            if (Object.keys(item.field.filter).length === 0) {
+              return false
+            }
+            return true
+          })
+        ]
+      }
+      return this.current.doc.groups.reduce(reducer, [])
     },
     groups: {
       get() {

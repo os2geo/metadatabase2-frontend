@@ -225,10 +225,10 @@
                 </v-data-table>
               </v-flex>
               <v-flex v-show="$route.params.hasOwnProperty('id')" :class="infoClass">
-                <v-card color="accent lighten-5" style="max-width:100%">
+                <v-card :color="`${$store.state.databases.current.isLocked ? 'red' : 'accent'} lighten-5`" style="max-width:100%">
                   <v-container fluid fill-height pa-0>
                     <v-layout column ma-0>
-                      <v-toolbar card dense color="accent" dark>
+                      <v-toolbar card dense :color="$store.state.databases.current.isLocked ? 'red' : 'accent'" dark>
                         <v-btn
                           icon
                           nuxt
@@ -653,6 +653,7 @@ export default {
   },
   created() {
     service('forms')(this.$store)
+    service('databases')(this.$store)
   },
   mounted() {
     const target = document.querySelector('.v-table__overflow')
@@ -806,7 +807,7 @@ export default {
           this.query[key] = item.filter
         } else if (item.type === 'boolean' && item.filter !== null) {
           this.query[key] = item.filter
-        } else if (value !== null && value !== '') {
+        } else if (typeof value !== 'undefined' && value !== null && value !== '') {
           this.query[key] = {
             $wildcard: `${value}*`
           }
