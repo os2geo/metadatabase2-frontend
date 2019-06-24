@@ -122,6 +122,7 @@ export default {
         })
         const last = this.$cookies.get('redirect')
         if (last) {
+          this.$cookies.remove('redirect')
           this.$router.replace(last)
         } else if (this.$store.state.auth.user.organizationId) {
           return this.$router.replace(this.localePath({

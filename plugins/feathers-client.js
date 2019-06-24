@@ -13,7 +13,11 @@ if (process.client) {
 } else {
   feathersClient.configure(restClient.axios(axios))
 }
-feathersClient.configure(auth({ storage: new CookieStorage() }))
+feathersClient.configure(auth({
+  storage: new CookieStorage({
+    path: '/'
+  })
+}))
 if (process.client) {
   socket.on('connect', () => {
     feathersClient.authenticate()

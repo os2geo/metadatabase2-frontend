@@ -60,8 +60,23 @@
                     @input="updateQuery()"
                   />
                   <v-spacer />
-
-                  <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
+                  <v-tooltip v-show="$breakpoint.is('smAndUp') && $store.state.auth.payload" top>
+                    <v-btn slot="activator" icon @click="dialogImport=true">
+                      <v-icon color="primary">
+                        fas fa-file-import
+                      </v-icon>
+                    </v-btn>
+                    <span>{{ $t('Import') }}</span>
+                  </v-tooltip>
+                  <v-tooltip v-show="$breakpoint.is('smAndUp') && $store.state.auth.payload" top>
+                    <v-btn slot="activator" icon @click="dialogExport=true">
+                      <v-icon color="primary">
+                        fas fa-file-export
+                      </v-icon>
+                    </v-btn>
+                    <span>{{ $t('Export') }}</span>
+                  </v-tooltip>
+                  <v-tooltip v-show="$breakpoint.is('smAndUp') && $store.state.auth.payload" top>
                     <v-btn slot="activator" icon @click="showCreate()">
                       <v-icon color="primary">
                         add
@@ -69,7 +84,7 @@
                     </v-btn>
                     <span>{{ $t('Add') }}</span>
                   </v-tooltip>
-                  <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
+                  <v-tooltip v-show="$breakpoint.is('smAndUp') && $store.state.auth.payload" top>
                     <v-btn slot="activator" :disabled="disableClear" icon @click="dialogRemove=true">
                       <v-icon color="primary">
                         delete
@@ -422,35 +437,99 @@
       </v-dialog>
       <v-dialog v-model="dialogImport" max-width="500" persistent>
         <v-card>
-          <v-card-title>
+          <v-card-title class="title">
             {{ $t('ImportExcel') }}
           </v-card-title>
           <v-card-text>
-            <v-text-field
-              v-model="filename"
-              :hint="$t('ChooseFile')"
-              :label="$t('Filename')"
-              readonly
-              append-icon="attach_file"
-              @click:append="fileselect()"
-            />
-            <v-select
-              v-model="sheet"
-              :items="sheets"
-              :label="$t('SelectSheet')"
+            <v-radio-group
+              v-model="importOptions"
+              :label="$t('Options')"
+              :messages="$t(importOptions===1?'UpdateCreateMessage':'DeleteMessage')"
+            >
+              <v-radio
+                :label="$t('Update/Create')"
+                :value="1"
+              />
+              <v-radio
+                :label="$t('Delete')"
+                :value="2"
+              />
+            </v-radio-group>
+            <v-checkbox
+              v-model="isLocked"
+              :label="$t('LockDatabase')"
+              hide-details
             />
           </v-card-text>
+          <v-form ref="importForm" @submit.prevent>
+            <v-card-text>
+              <v-text-field
+                v-model="filename"
+                :hint="$t('ChooseFile')"
+                :label="$t('Filename')"
+                readonly
+                append-icon="attach_file"
+                @click:append="fileselect()"
+              />
+              <v-select
+                v-model="sheet"
+                :items="sheets"
+                :label="$t('SelectSheet')"
+              />
+            </v-card-text>
+            <v-progress-linear v-model="progress" />
+            <v-card-actions>
+              <v-spacer />
+              <v-btn color="primary" flat @click="dialogImport=false">
+                {{ $t('Cancel') }}
+              </v-btn>
+              <v-btn
+                dark
+                color="primary"
+                @click="importExcel()"
+              >
+                {{ $t(importOptions===1 ? 'Import' : 'Delete') }}
+              </v-btn>
+            </v-card-actions>
+          </v-form>
+        </v-card>
+      </v-dialog>
+      <v-dialog v-model="dialogExport" max-width="500" persistent>
+        <v-card>
+          <v-card-title class="title">
+            {{ $t('ExportExcel') }}
+          </v-card-title>
+          <v-card-text>
+            <v-radio-group
+              v-model="exportOptions"
+              :label="$t('Options')"
+            >
+              <v-radio
+                :label="$t('List')"
+                :value="1"
+              />
+              <v-radio
+                :label="$t('Selected')"
+                :value="2"
+              />
+            </v-radio-group>
+            <v-checkbox
+              v-model="isLocked"
+              :label="$t('LockDatabase')"
+            />
+          </v-card-text>
+          <v-progress-linear v-model="progress" />
           <v-card-actions>
             <v-spacer />
-            <v-btn color="primary" flat @click="dialogImport=false">
+            <v-btn color="primary" flat @click="dialogExport=false">
               {{ $t('Cancel') }}
             </v-btn>
             <v-btn
               dark
               color="primary"
-              @click="importExcel()"
+              @click="exportExcel()"
             >
-              {{ $t('Import') }}
+              {{ $t('Export') }}
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -485,6 +564,8 @@
 </template>
 
 <script>
+import v4 from 'uuid/v4'
+import XLSX from 'xlsx'
 import client from '~/plugins/feathers-client'
 import service from '~/plugins/feathers-service.js'
 import dialogRemove from '~/components/dialog-remove.vue'
@@ -503,15 +584,19 @@ export default {
   },
   data() {
     return {
+      progress: 0,
       sorting: { name: null, descending: false },
       checkboxClearValue: false,
       loading: false,
       requiredRules: [v => !!v || this.$t('Required')],
       name: null,
       selectionSet: {},
+      dialogExport: false,
       dialogImport: false,
       dialogRemove: false,
       dialogCreate: false,
+      exportOptions: 1,
+      importOptions: 1,
       valid: null,
       sheets: [],
       sheet: null,
@@ -530,6 +615,17 @@ export default {
     }
   },
   computed: {
+    ...mapGetters('databases', {
+      database: 'current'
+    }),
+    isLocked: {
+      get() {
+        return this.database.isLocked
+      },
+      set(isLocked) {
+        this.$store.dispatch('databases/patch', [this.database.id, { isLocked }])
+      }
+    },
     headersNotHidden() {
       return this.headers.filter((item) => {
         return !item.isHidden
@@ -683,6 +779,156 @@ export default {
   },
 
   methods: {
+    async importExcel() {
+      try {
+        if (this.$refs.importForm.validate()) {
+          const service = client.service(`es/${this.database.id}`)
+          const json = XLSX.utils.sheet_to_json(this.$options.workbook.Sheets[this.sheet])
+          const json2 = json.map((item) => {
+            if (item.hasOwnProperty('_rev')) {
+              const { _rev, ...doc } = item
+              return doc
+            }
+            return item
+          })
+          this.progress = 0
+          let current = 0
+          for (const item of json2) {
+            if (this.importOptions === 1) {
+              // create / update
+              if (item.hasOwnProperty('_id') && item._id !== null) {
+                await service.update(item._id, item)
+                const index = this.data.findIndex((doc) => {
+                  return doc._id === item._id
+                })
+                if (index !== -1) {
+                  this.data.splice(index, 1, item)
+                }
+              } else {
+                item._id = v4()
+                await service.create(item)
+                this.pagination.total = this.pagination.total + 1
+              }
+            } else if (item.hasOwnProperty('_id') && item._id !== null) {
+              // delete
+              await service.remove(item._id)
+              this.pagination.total = this.pagination.total - 1
+              const index = this.data.findIndex((doc) => {
+                return doc._id === item._id
+              })
+              if (index !== -1) {
+                this.data.splice(index, 1)
+              }
+              if (this.selectionSet.hasOwnProperty(item._id)) {
+                this.$delete(this.selectionSet, item._id)
+              }
+            }
+            current++
+            this.progress = 100 * current / json2.length
+          }
+        }
+      } catch (err) {
+        console.log(err)
+        this.color = 'error'
+        this.snackbarTitle = this.$t('Error')
+        this.snackbarBody = err
+        this.snackbar = true
+      } finally {
+        this.dialogImport = false
+        this.progress = 0
+        this.$refs.importForm.reset()
+      }
+    },
+    async exportExcel() {
+      try {
+        let data = []
+        this.progress = 0
+        let current = 0
+        if (this.exportOptions === 1) {
+        // export list
+          let skip = 0
+          let limit = 0
+
+          while (this.pagination.total > skip + limit) {
+            const res = await client.service(`es/${this.$store.state.forms.current.databaseId}`).find({
+              query: {
+                ...this.query,
+                ...{ $skip: limit + skip }
+              }
+            })
+            data = [...data, ...res.data.map((item) => {
+              const { _meta, ...fields } = item
+              return fields
+            })]
+            limit = res.limit
+            skip = res.skip
+            current++
+            this.progress = 100 * current / Math.ceil(this.pagination.total / limit)
+          }
+        } else {
+        // export selected
+          const service = client.service(`es/${this.$store.state.forms.current.databaseId}`)
+          const keys = Object.keys(this.selectionSet)
+          for (const id of keys) {
+            current++
+            const doc = await service.get(id)
+            data.push(doc)
+            this.progress = 100 * current / keys.length
+          }
+        }
+        const ws = XLSX.utils.json_to_sheet(data, { header: this.headers.map(item => item.value) })
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, 'Ark 1')
+        XLSX.writeFile(wb, `${this.$route.params.id}.xlsx`)
+      } catch (err) {
+        console.log(err)
+      } finally {
+        this.dialogExport = false
+        this.progress = 0
+      }
+    },
+    async fileselect(id) {
+      const fileDialog = (...args) => {
+        const input = document.createElement('input')
+
+        // Set config
+        if (typeof args[0] === 'object') {
+          if (args[0].multiple === true) input.setAttribute('multiple', '')
+          if (args[0].accept !== undefined) { input.setAttribute('accept', args[0].accept) }
+          if (args[0].capture !== undefined) { input.setAttribute('capture', args[0].capture) }
+        }
+        input.setAttribute('type', 'file')
+
+        // IE10/11 Addition
+        input.style.display = 'none'
+        input.setAttribute('id', 'hidden-file')
+        document.body.appendChild(input)
+
+        // Return promise/callvack
+        return new Promise((resolve, reject) => {
+          input.addEventListener('change', (e) => {
+            resolve(input.files)
+            const lastArg = args[args.length - 1]
+            if (typeof lastArg === 'function') lastArg(input.files)
+            // IE10/11 Addition
+            document.body.removeChild(input)
+          })
+
+          // Simluate click event
+          const evt = document.createEvent('MouseEvents')
+          evt.initMouseEvent('click', true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 0, null)
+          input.dispatchEvent(evt)
+        })
+      }
+      const file = await fileDialog({ accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      this.filename = file[0].name
+      const fr = new FileReader()
+      fr.onload = () => {
+        this.$options.workbook = XLSX.read(fr.result, { type: 'array' })
+        this.sheets = this.$options.workbook.SheetNames
+      }
+      fr.readAsArrayBuffer(file[0])
+    },
     openLink(field) {
       window.open(this.doc[field.column], '_blank')
     },
@@ -697,6 +943,7 @@ export default {
     async create() {
       if (this.$refs.form.validate()) {
         const doc = { ...this.doc }
+        doc._id = v4()
         this.form.groups.forEach((group) => {
           group.fields.forEach((field) => {
             if (field.type === 'timestamp') {
