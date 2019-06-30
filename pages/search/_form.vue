@@ -233,7 +233,7 @@
                         />
                       </td>
                       <td v-for="(item, index) in visibleHeaders" :key="index" class="text-xs-left text-truncate overflow-hidden" :style="item.width>0 && `max-width:${item.width}px;min-width:${item.width}px`" @click.stop="$router.push(localePath({ name: 'search-form-id', params: { form: $route.params.form, id: props.item._id }}))">
-                        {{ props.item[item.value] }}
+                        {{ item.type === 'boolean' ? props.item[item.value] ? $t('true') : $t('false') : props.item[item.value] }}
                       </td>
                     </tr>
                   </template>
@@ -435,6 +435,31 @@
           </v-card>
         </v-form>
       </v-dialog>
+      <v-dialog
+        v-model="dialogResult"
+        max-width="500"
+        persistent
+        scrollable
+      >
+        <v-card>
+          <v-card-title class="title">
+            {{ $t('ImportDone') }}
+          </v-card-title>
+          <v-divider />
+          <v-card-text style="height: 300px;">
+            <p v-for="(item, index) in importResults" :key="index">
+              {{ item.message }}
+            </p>
+          </v-card-text>
+          <v-divider />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn color="primary" flat @click="dialogResult = false">
+              {{ $t('Close') }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <v-dialog v-model="dialogImport" max-width="500" persistent>
         <v-card>
           <v-card-title class="title">
@@ -595,6 +620,7 @@ export default {
       dialogImport: false,
       dialogRemove: false,
       dialogCreate: false,
+      dialogResult: false,
       exportOptions: 1,
       importOptions: 1,
       valid: null,
@@ -611,7 +637,8 @@ export default {
       color: null,
       snackbarTitle: null,
       snackbarBody: null,
-      snackbar: false
+      snackbar: false,
+      importResults: []
     }
   },
   computed: {
@@ -794,34 +821,38 @@ export default {
           this.progress = 0
           let current = 0
           for (const item of json2) {
-            if (this.importOptions === 1) {
-              // create / update
-              if (item.hasOwnProperty('_id') && item._id !== null) {
-                await service.update(item._id, item)
+            try {
+              if (this.importOptions === 1) {
+                // create / update
+                if (item.hasOwnProperty('_id') && item._id !== null) {
+                  await service.update(item._id, item)
+                  const index = this.data.findIndex((doc) => {
+                    return doc._id === item._id
+                  })
+                  if (index !== -1) {
+                    this.data.splice(index, 1, item)
+                  }
+                } else {
+                  item._id = v4()
+                  await service.create(item)
+                  this.pagination.total = this.pagination.total + 1
+                }
+              } else if (item.hasOwnProperty('_id') && item._id !== null) {
+                // delete
+                await service.remove(item._id)
+                this.pagination.total = this.pagination.total - 1
                 const index = this.data.findIndex((doc) => {
                   return doc._id === item._id
                 })
                 if (index !== -1) {
-                  this.data.splice(index, 1, item)
+                  this.data.splice(index, 1)
                 }
-              } else {
-                item._id = v4()
-                await service.create(item)
-                this.pagination.total = this.pagination.total + 1
+                if (this.selectionSet.hasOwnProperty(item._id)) {
+                  this.$delete(this.selectionSet, item._id)
+                }
               }
-            } else if (item.hasOwnProperty('_id') && item._id !== null) {
-              // delete
-              await service.remove(item._id)
-              this.pagination.total = this.pagination.total - 1
-              const index = this.data.findIndex((doc) => {
-                return doc._id === item._id
-              })
-              if (index !== -1) {
-                this.data.splice(index, 1)
-              }
-              if (this.selectionSet.hasOwnProperty(item._id)) {
-                this.$delete(this.selectionSet, item._id)
-              }
+            } catch (err) {
+              this.importResults.push(err)
             }
             current++
             this.progress = 100 * current / json2.length
@@ -835,6 +866,7 @@ export default {
         this.snackbar = true
       } finally {
         this.dialogImport = false
+        this.dialogResult = true
         this.progress = 0
         this.$refs.importForm.reset()
       }

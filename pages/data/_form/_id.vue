@@ -33,7 +33,7 @@
                         :label="fieldItem.name"
                         :required="fieldItem.isRequired"
                         :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                        :readonly="$store.state.auth.payload===null"
+                        readonly
                         @input="change($event, fieldItem)"
                       />
                       <v-text-field
@@ -42,7 +42,7 @@
                         :label="fieldItem.name"
                         :required="fieldItem.isRequired"
                         :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                        :readonly="$store.state.auth.payload===null"
+                        readonly
                         type="url"
                         append-outer-icon="launch"
                         @click:append-outer="openLink(fieldItem)"
@@ -54,7 +54,7 @@
                         :label="fieldItem.name"
                         :required="fieldItem.isRequired"
                         :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                        :readonly="$store.state.auth.payload===null"
+                        readonly
                         @input="change($event, fieldItem)"
                       />
                       <v-text-field
@@ -70,7 +70,7 @@
                         :label="fieldItem.name"
                         :required="fieldItem.isRequired"
                         :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                        :readonly="$store.state.auth.payload===null"
+                        readonly
                         @change="change($event, fieldItem)"
                       />
                       <v-checkbox
@@ -79,7 +79,7 @@
                         :label="fieldItem.name"
                         :required="fieldItem.isRequired"
                         :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                        :readonly="$store.state.auth.payload===null"
+                        readonly
                         @change="change($event, fieldItem)"
                       />
                       <v-menu
@@ -106,7 +106,7 @@
                         <v-date-picker
                           v-model="doc[fieldItem.column]"
                           :locale="locale"
-                          :readonly="$store.state.auth.payload===null"
+                          readonly
                           no-title
                           @input="menus[fieldIndex] = false"
                           @change="change($event, fieldItem)"
@@ -119,7 +119,7 @@
                         :label="fieldItem.name"
                         :required="fieldItem.isRequired"
                         :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                        :readonly="$store.state.auth.payload===null"
+                        readonly
                         @change="change($event, fieldItem)"
                       >
                         <v-radio

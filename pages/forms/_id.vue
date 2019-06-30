@@ -513,9 +513,6 @@ export default {
             if (Array.isArray(item.field.filter) && item.field.filter.length === 0) {
               return false
             }
-            if (Object.keys(item.field.filter).length === 0) {
-              return false
-            }
             return true
           })
         ]
