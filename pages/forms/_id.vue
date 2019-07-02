@@ -517,7 +517,7 @@ export default {
           })
         ]
       }
-      return this.current.doc.groups.reduce(reducer, [])
+      return this.current.doc.groups ? this.current.doc.groups.reduce(reducer, []) : []
     },
     groups: {
       get() {
