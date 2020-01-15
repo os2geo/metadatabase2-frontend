@@ -60,7 +60,7 @@
                     @input="updateQuery()"
                   />
                   <v-spacer />
-                  <v-tooltip v-show="$breakpoint.is('smAndUp') && $store.state.auth.payload" top>
+                  <v-tooltip v-show="$breakpoint.is('smAndUp') && isUser" top>
                     <v-btn slot="activator" icon @click="dialogImport=true">
                       <v-icon color="primary">
                         fas fa-file-import
@@ -76,7 +76,7 @@
                     </v-btn>
                     <span>{{ $t('Export') }}</span>
                   </v-tooltip>
-                  <v-tooltip v-show="$breakpoint.is('smAndUp') && $store.state.auth.payload" top>
+                  <v-tooltip v-show="$breakpoint.is('smAndUp') && isUser" top>
                     <v-btn slot="activator" icon @click="showCreate()">
                       <v-icon color="primary">
                         add
@@ -84,7 +84,7 @@
                     </v-btn>
                     <span>{{ $t('Add') }}</span>
                   </v-tooltip>
-                  <v-tooltip v-show="$breakpoint.is('smAndUp') && $store.state.auth.payload" top>
+                  <v-tooltip v-show="$breakpoint.is('smAndUp') && isUser" top>
                     <v-btn slot="activator" :disabled="disableClear" icon @click="dialogRemove=true">
                       <v-icon color="primary">
                         delete
@@ -93,7 +93,7 @@
                     <span>{{ $t('Delete') }}</span>
                   </v-tooltip>
                   <v-tooltip bottom>
-                    <v-menu slot="activator" lazy max-height="50vh" :close-on-content-click="false">
+                    <v-menu slot="activator" lazy max-height="50vh" :close-on-content-click="false" offset-y>
                       <v-btn slot="activator" icon>
                         <v-icon color="primary">
                           settings
@@ -113,13 +113,21 @@
                     </v-menu>
                     <span>{{ $t('ShowColumns') }}</span>
                   </v-tooltip>
+
                   <v-tooltip v-if="$breakpoint.is('smAndUp')" top>
-                    <v-btn slot="activator" icon @click="dialogHelp=true">
-                      <v-icon color="primary">
-                        help_outline
-                      </v-icon>
-                    </v-btn>
-                    <span>{{ $t('Help') }}</span>
+                    <v-menu slot="activator" lazy max-height="50vh" :close-on-content-click="false" offset-y>
+                      <v-btn slot="activator" icon>
+                        <v-icon color="primary">
+                          help_outline
+                        </v-icon>
+                      </v-btn>
+                      <v-list dense>
+                        <v-list-tile v-for="(link, index) in links" :key="index" :href="link.url" target="_blank">
+                          <v-list-tile-title>{{ link.name }}</v-list-tile-title>
+                        </v-list-tile>
+                      </v-list>
+                    </v-menu>
+                    <span>{{ $t('ShowColumns') }}</span>
                   </v-tooltip>
 
                   <v-tooltip v-if="$breakpoint.is('xsOnly')" top>
@@ -658,12 +666,18 @@ export default {
         return !item.isHidden
       })
     },
+    isUser() {
+      return this.$store.state.auth.user.roleId < 4
+    },
     isAdmin() {
       return this.$store.state.auth.user.roleId < 3
     },
     ...mapGetters('forms', ['current']),
     form() {
       return this.current.doc
+    },
+    links() {
+      return this.form.links
     },
     groups() {
       return this.form.groups

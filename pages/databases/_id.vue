@@ -235,7 +235,6 @@ export default {
         $limit: -1
       }
     })
-    console.log(res)
     return {
       pagination,
       forms: res

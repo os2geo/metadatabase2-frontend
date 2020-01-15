@@ -42,7 +42,7 @@
     <v-content>
       <v-container fluid grid-list-md>
         <v-layout row wrap>
-          <v-flex xs12 sm6>
+          <v-flex sm12 md4>
             <v-card>
               <v-card-text>
                 <v-text-field
@@ -71,11 +71,13 @@
               </v-card-actions>
             </v-card>
           </v-flex>
-          <v-flex xs12 sm6>
+          <v-flex sm12 md4>
             <v-card>
-              <v-card-title>
-                {{ $t('Filter') }}
-              </v-card-title>
+              <v-toolbar color="transparent" card>
+                <v-toolbar-title>
+                  {{ $t('Filter') }}
+                </v-toolbar-title>
+              </v-toolbar>
               <v-list>
                 <v-list-tile v-for="(item, index) in filteredItems" :key="index">
                   <v-list-tile-content>
@@ -83,6 +85,31 @@
                   </v-list-tile-content>
                   <v-list-tile-action>
                     <v-btn icon @click="editField(item.groupIndex, item.fieldIndex)">
+                      <v-icon>edit</v-icon>
+                    </v-btn>
+                  </v-list-tile-action>
+                </v-list-tile>
+              </v-list>
+            </v-card>
+          </v-flex>
+          <v-flex sm12 md4>
+            <v-card>
+              <v-toolbar color="transparent" card>
+                <v-toolbar-title>
+                  {{ $t('Links') }}
+                </v-toolbar-title>
+                <v-spacer />
+                <v-btn icon color="primary" @click="addLink()">
+                  <v-icon>add</v-icon>
+                </v-btn>
+              </v-toolbar>
+              <v-list>
+                <v-list-tile v-for="(item, index) in links" :key="index">
+                  <v-list-tile-content>
+                    {{ item.name }}
+                  </v-list-tile-content>
+                  <v-list-tile-action>
+                    <v-btn icon @click="editLink(index)">
                       <v-icon>edit</v-icon>
                     </v-btn>
                   </v-list-tile-action>
@@ -170,6 +197,26 @@
         </v-layout>
       </v-container>
     </v-content>
+    <v-dialog v-model="showDialogLink" max-width="500">
+      <v-card>
+        <v-card-title>
+          {{ $t('EditLink') }}
+        </v-card-title>
+        <v-card-text>
+          <v-text-field v-model="linkName" :label="$t('Name')" />
+          <v-textarea v-model="linkUrl" :label="$t('Link')" type="url" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn flat color="primary" @click.stop="removeLink()">
+            {{ $t('Delete') }}
+          </v-btn>
+          <v-btn flat color="primary" @click.stop="showDialogLink=false">
+            {{ $t('Close') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model="showDialogCreate" max-width="500">
       <v-card>
         <v-card-title>
@@ -453,8 +500,10 @@ export default {
       menuTo: null,
       drawer: null,
       showFieldDialog: false,
+      showDialogLink: false,
       showDialogCreate: false,
       showDialogCreateCopy: false,
+      currentLinkIndex: null,
       currentGroupIndex: null,
       currentFieldIndex: null,
       headers: [],
@@ -518,6 +567,40 @@ export default {
         ]
       }
       return this.current.doc.groups ? this.current.doc.groups.reduce(reducer, []) : []
+    },
+    links: {
+      get() {
+        return this.current.doc.links || []
+      },
+      set(value) {
+        this.$store.dispatch('forms/patch', [this.$route.params.id, { doc: { ...this.current.doc, links: value } }])
+      }
+    },
+    link: {
+      get() {
+        return this.currentLinkIndex !== null && this.links.length > this.currentLinkIndex ? this.links[this.currentLinkIndex] : { name: null, url: null }
+      },
+      set(link) {
+        const links = [ ...this.links ]
+        links.splice(this.currentLinkIndex, 1, link)
+        this.links = links
+      }
+    },
+    linkName: {
+      get() {
+        return this.link.name
+      },
+      set(name) {
+        this.link = { ...this.link, name }
+      }
+    },
+    linkUrl: {
+      get() {
+        return this.link.url
+      },
+      set(url) {
+        this.link = { ...this.link, url }
+      }
     },
     groups: {
       get() {
@@ -678,6 +761,17 @@ export default {
     service('databases')(this.$store)
   },
   methods: {
+    addLink() {
+      this.links = [...this.links, { name: 'link', url: 'https://link' }]
+    },
+    editLink(index) {
+      this.currentLinkIndex = index
+      this.showDialogLink = true
+    },
+    removeLink() {
+      this.links = this.links.filter((item, index) => index !== this.currentLinkIndex)
+      this.showDialogLink = false
+    },
     addGroup() {
       this.groups = [...this.groups, { name: null, fields: [] }]
     },
