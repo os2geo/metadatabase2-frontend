@@ -33,4 +33,4 @@ spec:
         - name: HOST
           value: 0.0.0.0
         - name: VERSION
-          value: 1.0.4
+          value: 1.0.5

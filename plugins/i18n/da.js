@@ -22,6 +22,7 @@ export default {
   Descending: 'Faldende',
   EditField: 'Rediger felt',
   Email: 'Email',
+  Exact: 'Præcis',
   Export: 'Eksporter',
   ExportExcel: 'Eksporter til Excel',
   false: 'FALSK',

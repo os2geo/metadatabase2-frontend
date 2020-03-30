@@ -22,6 +22,7 @@ export default {
   Descending: 'Descending',
   EditField: 'Edit field',
   Email: 'Email',
+  Exact: 'Exact',
   Export: 'Export',
   ExportExcel: 'Export to Excel',
   false: 'FALSE',

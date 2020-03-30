@@ -93,6 +93,13 @@
           :disabled="disableFilter"
           clearable
         />
+        <v-checkbox
+          v-if="['text','textarea'].indexOf(value.type) !== -1 && !isSelect"
+          v-model="exact"
+          :label="$t('Exact')"
+          class="ma-0"
+          hide-details
+        />
         <v-text-field
           v-if="value.type === 'number'"
           v-model.number="filter"
@@ -278,6 +285,15 @@ export default {
       },
       set(value) {
         this.$emit('update:filter', value)
+        this.$emit('update:query')
+      }
+    },
+    exact: {
+      get() {
+        return this.value.exact
+      },
+      set(value) {
+        this.$emit('update:exact', value)
         this.$emit('update:query')
       }
     },

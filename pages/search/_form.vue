@@ -218,6 +218,7 @@
                                 @update:sortBy="sorting.name=$event"
                                 @update:descending="sorting.descending=$event"
                                 @update:filter="item.filter=$event"
+                                @update:exact="item.exact=$event"
                                 @update:query="updateQuery()"
                               />
                             </v-layout>
@@ -748,7 +749,8 @@ export default {
           menu: false,
           sortable: false,
           lookup: field.values,
-          width: 200
+          width: 200,
+          exact: false
         })
       })
     })
@@ -773,8 +775,14 @@ export default {
       } else if (item.type === 'boolean' && value !== null) {
         query[key] = item.filter
       } else if (value !== null && value !== '') {
-        query[key] = {
-          $wildcard: `${value}*`
+        if (value.exact) {
+          query[key] = {
+            $phrase: value
+          }
+        } else {
+          query[key] = {
+            $wildcard: `${value}*`
+          }
         }
       }
     })
@@ -1101,8 +1109,14 @@ export default {
         } else if (item.type === 'boolean' && item.filter !== null) {
           this.query[key] = item.filter
         } else if (typeof value !== 'undefined' && value !== null && value !== '') {
-          this.query[key] = {
-            $wildcard: `${value}*`
+          if (item.exact) {
+            this.query[key] = {
+              $phrase: value
+            }
+          } else {
+            this.query[key] = {
+              $wildcard: `${value}*`
+            }
           }
         }
       })
