@@ -907,7 +907,8 @@ export default {
             const res = await client.service(`es/${this.$store.state.forms.current.databaseId}`).find({
               query: {
                 ...this.query,
-                ...{ $skip: limit + skip }
+                $skip: limit + skip,
+                $sort: { _id: 1 }
               }
             })
             data = [...data, ...res.data.map((item) => {
