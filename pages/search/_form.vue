@@ -668,10 +668,10 @@ export default {
       })
     },
     isUser() {
-      return this.$store.state.auth.user.roleId < 4
+      return this.$store.state.auth.user && this.$store.state.auth.user.roleId < 4
     },
     isAdmin() {
-      return this.$store.state.auth.user.roleId < 3
+      return this.$store.state.auth.user && this.$store.state.auth.user.roleId < 3
     },
     ...mapGetters('forms', ['current']),
     form() {

@@ -6,6 +6,7 @@
   "private": true,
   "scripts": {
     "dev": "nuxt",
+    "dev2": "FEATHERS=https://api.metadatabase.os2geo.dk nuxt",
     "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate",
