@@ -1,0 +1,29 @@
+version: "3"
+services:
+  app:
+    image: runetvilum/metadatabase2-frontend
+    environment:
+      HOST: 0.0.0.0
+    ports:
+      - "3000:3000"
+    networks:
+      - webnet
+  feathers:
+    image: runetvilum/metadatabase2-backend
+    ports:
+      - "3030:3030"
+    networks:
+      - webnet
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.8.11
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+    volumes:
+      - /root/esdatadir:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - webnet
+networks:
+  webnet:
