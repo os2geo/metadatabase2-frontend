@@ -9,7 +9,9 @@ const restClient = rest(process.env.BACKEND)
 const socket = io(process.env.BACKEND, { transports: ['websocket'] })
 const feathersClient = feathers()
 if (process.client) {
-  feathersClient.configure(socketio(socket))
+  feathersClient.configure(socketio(socket, {
+    timeout: 10000
+  }))
 } else {
   feathersClient.configure(restClient.axios(axios))
 }
