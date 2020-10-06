@@ -803,32 +803,6 @@ export default {
       this.currentFieldIndex = null
       this.currentGroupIndex = null
     },
-    saveFieldDialog() {
-      const groups = [...this.groups]
-      const group = { ...groups[this.currentGroupIndex] }
-      const fields = [...group.fields]
-      fields.splice(this.currentFieldIndex, 1, this.field)
-      group.fields = fields
-      groups.splice(this.currentGroupIndex, 1, group)
-      this.groups = groups
-      this.showFieldDialog = false
-      this.currentGroupIndex = null
-      this.currentFieldIndex = null
-    },
-    editGroup(index) {
-      this.currentGroupIndex = index
-      this.groupName = this.groups[this.currentGroupIndex].name
-      this.showGroupDialog = true
-    },
-    saveGroupDialog() {
-      const groups = [...this.groups]
-      groups.splice(this.currentGroupIndex, 1, { ...this.groups[this.currentGroupIndex], name: this.groupName })
-      this.groups = groups
-      this.showGroupDialog = false
-      this.$refs.groupForm.reset()
-      this.currentGroupIndex = null
-    },
-
     dragEnterGroup(e, index) {
       e.dataTransfer.dropEffect = 'move'
     },
@@ -956,7 +930,9 @@ export default {
       }
     },
     changeColumn(value) {
-      this.fieldType = value.type
+      if (value.type) {
+        this.fieldType = value.type
+      }
     },
     showCreateCopy() {
       this.showDialogCreateCopy = true
