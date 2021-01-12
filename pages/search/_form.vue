@@ -336,6 +336,7 @@
                               v-model="doc[fieldItem.column]"
                               :label="fieldItem.name"
                               :required="fieldItem.isRequired"
+                              :readonly="fieldItem.isReadonly"
                               :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
                             />
                             <v-text-field
@@ -343,6 +344,7 @@
                               v-model="doc[fieldItem.column]"
                               :label="fieldItem.name"
                               :required="fieldItem.isRequired"
+                              :readonly="fieldItem.isReadonly"
                               :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
                               type="url"
                               append-outer-icon="launch"
@@ -353,6 +355,7 @@
                               v-model="doc[fieldItem.column]"
                               :label="fieldItem.name"
                               :required="fieldItem.isRequired"
+                              :readonly="fieldItem.isReadonly"
                               :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
                             />
                             <v-text-field
@@ -367,6 +370,7 @@
                               :items="fieldItem.values"
                               :label="fieldItem.name"
                               :required="fieldItem.isRequired"
+                              :readonly="fieldItem.isReadonly"
                               :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
                             />
                             <v-checkbox
@@ -374,6 +378,7 @@
                               v-model="doc[fieldItem.column]"
                               :label="fieldItem.name"
                               :required="fieldItem.isRequired"
+                              :readonly="fieldItem.isReadonly"
                               :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
                             />
                             <v-menu
@@ -401,6 +406,7 @@
                                 v-model="doc[fieldItem.column]"
                                 :locale="locale"
                                 no-title
+                                :readonly="fieldItem.isReadonly"
                                 @input="menus[fieldIndex]=false"
                               />
                             </v-menu>
@@ -410,6 +416,7 @@
                               :mandatory="false"
                               :label="fieldItem.name"
                               :required="fieldItem.isRequired"
+                              :readonly="fieldItem.isReadonly"
                               :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
                             >
                               <v-radio
@@ -736,6 +743,7 @@ export default {
   async asyncData({ store, params }) {
     const headers = []
     const query = {}
+    const doc = {}
     store.state.forms.current.doc.groups.forEach((group) => {
       group.fields.forEach((field) => {
         headers.push({
@@ -752,6 +760,9 @@ export default {
           width: 200,
           exact: false
         })
+        if (field.defaultValue) {
+          doc[field.column] = field.defaultValue
+        }
       })
     })
     headers.forEach((item) => {
@@ -793,6 +804,7 @@ export default {
       headers,
       query,
       data,
+      doc,
       pagination
     }
   },

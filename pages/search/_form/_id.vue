@@ -28,7 +28,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="readonly"
+                    :readonly="readonly || fieldItem.isReadonly"
                     @input="change($event, fieldItem)"
                   />
                   <v-text-field
@@ -37,7 +37,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="readonly"
+                    :readonly="readonly || fieldItem.isReadonly"
                     type="url"
                     append-outer-icon="launch"
                     @click:append-outer="openLink(fieldItem)"
@@ -49,7 +49,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="readonly"
+                    :readonly="readonly || fieldItem.isReadonly"
                     @input="change($event, fieldItem)"
                   />
                   <v-text-field
@@ -65,7 +65,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="readonly"
+                    :readonly="readonly || fieldItem.isReadonly"
                     @change="change($event, fieldItem)"
                   />
                   <v-checkbox
@@ -74,7 +74,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="readonly"
+                    :readonly="readonly || fieldItem.isReadonly"
                     @change="change($event, fieldItem)"
                   />
                   <v-menu
@@ -101,7 +101,7 @@
                     <v-date-picker
                       v-model="doc[fieldItem.column]"
                       :locale="locale"
-                      :readonly="readonly"
+                      :readonly="readonly || fieldItem.isReadonly"
                       no-title
                       @input="menus[fieldIndex] = false"
                       @change="change($event, fieldItem)"
@@ -114,7 +114,7 @@
                     :label="fieldItem.name"
                     :required="fieldItem.isRequired"
                     :rules="fieldItem.isRequired ? [v => !!v || $t('Required')] : []"
-                    :readonly="readonly"
+                    :readonly="readonly || fieldItem.isReadonly"
                     @change="change($event, fieldItem)"
                   >
                     <v-radio

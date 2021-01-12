@@ -291,6 +291,10 @@
             v-model="fieldIsRequired"
             :label="$t('Required')"
           />
+          <v-checkbox
+            v-model="fieldIsReadonly"
+            :label="$t('Readonly')"
+          />
           <v-combobox
             v-model="fieldColumn"
             :items="headers"
@@ -304,6 +308,10 @@
             v-model="fieldType"
             :items="['boolean','email','date','number','radio','select','text','textarea','timestamp','url']"
             :label="$t('FieldType')"
+          />
+          <v-text-field
+            v-model="fieldDefaultValue"
+            :label="$t('DefaultValue')"
           />
           <div v-show="['radio','select'].indexOf(fieldType) !==-1">
             <v-toolbar card dense>
@@ -666,6 +674,14 @@ export default {
         }
       }
     },
+    fieldDefaultValue: {
+      get() {
+        return this.field.defaultValue
+      },
+      set(defaultValue) {
+        this.field = { ...this.field, defaultValue }
+      }
+    },
     fieldIsHidden: {
       get() {
         return this.field.isHidden
@@ -688,6 +704,14 @@ export default {
       },
       set(isRequired) {
         this.field = { ...this.field, isRequired }
+      }
+    },
+    fieldIsReadonly: {
+      get() {
+        return this.field.isReadonly
+      },
+      set(isReadonly) {
+        this.field = { ...this.field, isReadonly }
       }
     },
     fieldValues: {
