@@ -196,7 +196,7 @@ export default {
       return ''
     },
     readonly() {
-      return this.$store.state.auth.payload === null || this.$store.state.databases.current.isLocked
+      return this.$store.state.auth.payload === null || this.$store.state.databases.current.isLocked || (this.$store.state.auth.user && this.$store.state.auth.user.organizationId !== this.$store.state.forms.current.organizationId)
     }
   },
   async asyncData({ store, params }) {

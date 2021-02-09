@@ -613,7 +613,7 @@ import dialogRemove from '~/components/dialog-remove.vue'
 import tableHeader from '~/components/table-header.vue'
 import mainDrawer from '~/components/main-drawer'
 import mainToolbar from '~/components/main-toolbar'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 
 export default {
   components: { mainDrawer, mainToolbar, dialogRemove, tableHeader },
@@ -661,6 +661,7 @@ export default {
     ...mapGetters('databases', {
       database: 'current'
     }),
+    ...mapState('auth', ['user']),
     isLocked: {
       get() {
         return this.database.isLocked
@@ -675,10 +676,10 @@ export default {
       })
     },
     isUser() {
-      return this.$store.state.auth.user && this.$store.state.auth.user.roleId < 4
+      return this.user && this.user.roleId < 4 && this.user.organizationId === this.current.organizationId
     },
     isAdmin() {
-      return this.$store.state.auth.user && this.$store.state.auth.user.roleId < 3
+      return this.user && this.user.roleId < 3 && this.user.organizationId === this.current.organizationId
     },
     ...mapGetters('forms', ['current']),
     form() {
