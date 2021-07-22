@@ -37,7 +37,7 @@
     "vuedraggable": "^2.21.0",
     "vuetify": "^1.5.14",
     "vuetify-loader": "^1.2.2",
-    "xlsx": "^0.14.3"
+    "xlsx": "^0.17.0"
   },
   "devDependencies": {
     "@nuxtjs/eslint-config": "^0.0.1",
